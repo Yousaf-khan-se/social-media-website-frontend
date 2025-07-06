@@ -1,3 +1,8 @@
+# deployment link
+
+https://social-media-website-frontend-pied.vercel.app/
+
+
 # Social Media Platform Frontend
 
 A modern, responsive social media platform built with React, Redux Toolkit, and ShadCN UI components.
