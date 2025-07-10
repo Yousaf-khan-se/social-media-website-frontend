@@ -354,6 +354,7 @@ const postsSlice = createSlice({
                 }
                 state.hasMore = action.payload.hasMore
                 state.page = action.payload.page
+
             })
             .addCase(getExplore.rejected, (state, action) => {
                 state.isLoading = false

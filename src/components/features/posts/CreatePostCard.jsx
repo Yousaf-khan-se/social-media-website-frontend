@@ -24,10 +24,10 @@ export const CreatePostCard = () => {
 
     return (
         <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-2 sm:p-4">
                 <form onSubmit={handleSubmit}>
-                    <div className="flex space-x-4">
-                        <Avatar>
+                    <div className="flex space-x-2 sm:space-x-4">
+                        <Avatar className="h-9 w-9 sm:h-10 sm:w-10">
                             <AvatarImage src={user.avatar} alt={user.name} />
                             <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
                         </Avatar>
@@ -36,50 +36,15 @@ export const CreatePostCard = () => {
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 placeholder="What's happening?"
-                                className="w-full min-h-[120px] p-3 text-lg resize-none border-0 outline-none bg-transparent placeholder:text-muted-foreground"
+                                className="w-full min-h-[60px] sm:min-h-[120px] p-2 sm:p-3 text-base sm:text-lg resize-none border-0 outline-none bg-transparent placeholder:text-muted-foreground"
                                 disabled={isLoading}
                             />
-                            <div className="flex items-center justify-between mt-3">
-                                <div className="flex items-center space-x-4">
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-primary hover:bg-primary/10"
-                                    >
-                                        <Image className="h-5 w-5" />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-primary hover:bg-primary/10"
-                                    >
-                                        <Smile className="h-5 w-5" />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-primary hover:bg-primary/10"
-                                    >
-                                        <MapPin className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <span className="text-sm text-muted-foreground">
-                                        {280 - content.length}
-                                    </span>
-                                    <Button
-                                        type="submit"
-                                        disabled={!content.trim() || isLoading || content.length > 280}
-                                        className="rounded-full"
-                                    >
-                                        {isLoading ? 'Posting...' : 'Post'}
-                                    </Button>
-                                </div>
-                            </div>
                         </div>
+                    </div>
+                    <div className="flex justify-end mt-2">
+                        <Button type="submit" size="sm" className="w-full sm:w-auto">
+                            {isLoading ? 'Posting...' : 'Post'}
+                        </Button>
                     </div>
                 </form>
             </CardContent>

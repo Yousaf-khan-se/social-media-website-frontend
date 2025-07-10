@@ -9,7 +9,10 @@ import { ExplorePage } from './pages/ExplorePage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { PostPage } from './pages/PostPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import './App.css'
+import { CreatePostCard } from './components/features/posts/CreatePostCard'
+import { CommentCard } from './components/features/posts/CommentCard'
 
 function App() {
   return (
@@ -39,7 +42,7 @@ function App() {
                 <ProfilePage />
               </ProtectedRoute>
             } />
-            <Route path="profile/:userId" element={
+            <Route path="profile" element={
               <ProtectedRoute>
                 <ProfilePage />
               </ProtectedRoute>
@@ -49,7 +52,22 @@ function App() {
                 <PostPage />
               </ProtectedRoute>
             } />
+            <Route path="messages" element={
+              <ProtectedRoute>
+                <h1 className='text-2xl font-bold text-center pt-20'>Coming Soon ...</h1>
+              </ProtectedRoute>
+            } /><Route path="bookmarks" element={
+              <ProtectedRoute>
+                <h1 className='text-2xl font-bold text-center pt-20'>Coming Soon ...</h1>
+              </ProtectedRoute>
+            } />
+            <Route path="settings" element={
+              <ProtectedRoute>
+                <h1 className='text-2xl font-bold text-center pt-20'>Under Development ...</h1>
+              </ProtectedRoute>
+            } />
           </Route>
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
     </Router>
