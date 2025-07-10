@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Calendar, Edit } from 'lucide-react'
-import { updateProfile } from '@/store/slices/profileSlice'
 import { getUserPosts, getMyPosts, resetPosts } from '@/store/slices/postsSlice'
 import { PostCard } from '@/components/features/posts/PostCard'
+import { updateProfile } from '@/store/slices/authSlice'
 
 export const ProfilePage = () => {
     const { userId } = useParams()
