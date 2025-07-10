@@ -103,6 +103,24 @@ export const changePassword = createAsyncThunk(
     }
 )
 
+export const updateProfile = createAsyncThunk(
+    'auth/updateProfile',
+    async (profileData, { rejectWithValue }) => {
+        try {
+            const response = await api.put('/users/profile', profileData)
+            const data = response.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            console.log('update Profile data: ', data)
+            return data
+        } catch (error) {
+            console.log('update Profile error: ', error)
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
 // Simple initial state for HTTP secure cookies
 const initialState = {
     user: null,
@@ -180,6 +198,23 @@ const authSlice = createSlice({
                 state.isLoading = false
                 state.error = action.payload
                 state.isAuthenticated = false
+            })
+            //update user
+            .addCase(updateProfile.pending, (state) => {
+                state.isLoading = true
+                state.error = null
+            })
+            .addCase(updateProfile.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.user = action.payload.user
+                state.error = null
+            })
+            .addCase(updateProfile.rejected, (state, action) => {
+                state.isLoading = false
+                state.user = null
+                state.isAuthenticated = false
+                state.initialized = true // <--- ENSURE THIS IS ALWAYS TRUE
+                state.error = action.payload
             })
             // Logout
             .addCase(logout.fulfilled, (state) => {

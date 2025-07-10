@@ -27,8 +27,10 @@ export const updateProfile = createAsyncThunk(
             if (!data.success) {
                 return rejectWithValue(data)
             }
+            console.log('update Profile data: ', data)
             return data
         } catch (error) {
+            console.log('update Profile error: ', error)
             return rejectWithValue(error.response?.data || { error: error.message })
         }
     }
@@ -184,7 +186,8 @@ const profileSlice = createSlice({
             })
             .addCase(updateProfile.fulfilled, (state, action) => {
                 state.isLoading = false
-                state.currentProfile = { ...state.currentProfile, ...action.payload }
+                console.log('update Profile data: ', action.payload)
+                state.currentProfile = { ...state.currentProfile, ...action.payload.user }
             })
             .addCase(updateProfile.rejected, (state, action) => {
                 state.isLoading = false
