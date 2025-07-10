@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Calendar, Edit } from 'lucide-react'
 import { updateProfile } from '@/store/slices/profileSlice'
-import { getUserPosts, getMyPosts } from '@/store/slices/postsSlice'
+import { getUserPosts, getMyPosts, resetPosts } from '@/store/slices/postsSlice'
 import { PostCard } from '@/components/features/posts/PostCard'
 
 export const ProfilePage = () => {
@@ -46,6 +46,7 @@ export const ProfilePage = () => {
 
     // Fetch posts when component mounts or userId changes
     useEffect(() => {
+        dispatch(resetPosts());
         if (isOwnProfile) {
             dispatch(getMyPosts({ page: 1, limit: 10 }))
         } else if (userId) {

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Search, TrendingUp, Hash } from 'lucide-react'
-import { getExplore, searchPosts, getTrendingTopics, getSuggestedUsers } from '@/store/slices/postsSlice'
+import { getExplore, searchPosts, getTrendingTopics, getSuggestedUsers, resetPosts } from '@/store/slices/postsSlice'
 import { followUser } from '@/store/slices/profileSlice'
 import { PostCard } from '@/components/features/posts/PostCard'
 
@@ -24,6 +24,7 @@ export const ExplorePage = () => {
 
     // Load explore posts, trending topics, and suggested users on mount
     useEffect(() => {
+        dispatch(resetPosts());
         dispatch(getExplore({ page: 1, limit: 10 }))
         dispatch(getTrendingTopics())
         dispatch(getSuggestedUsers())
