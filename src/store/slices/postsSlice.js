@@ -200,7 +200,7 @@ export const toggleLike = createAsyncThunk(
             if (!data.success) {
                 return rejectWithValue(data)
             }
-            return { postId, ...data }
+            return data;
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: error.message })
         }
@@ -216,7 +216,7 @@ export const addComment = createAsyncThunk(
             if (!data.success) {
                 return rejectWithValue(data)
             }
-            return { postId, comment: data }
+            return data
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: error.message })
         }
@@ -270,6 +270,28 @@ export const getSuggestedUsers = createAsyncThunk(
         }
     }
 )
+
+export const uploadPostMedia = createAsyncThunk(
+    'posts/uploadPostMedia',
+    async ({ id, media }, { rejectWithValue }) => {
+        try {
+            console.log('mediaFiles:', media.getAll('media')) // Debugging line to check files being uploaded
+            const response = await api.put(`/posts/media/${id}`, media,
+                {
+                    timeout: 120000, // 2 minutes timeout for media uploads
+                }
+            )
+            const data = response.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            return data
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
 
 const initialState = {
     posts: [],
@@ -416,14 +438,25 @@ const postsSlice = createSlice({
                 state.isLoading = true
                 state.error = null
             })
-            .addCase(createPost.fulfilled, (state, action) => {
+            .addCase(createPost.fulfilled, (state) => {
                 state.isLoading = false
-                const newPost = action.payload.post || action.payload.data
-                state.posts.unshift(newPost)
+                // const newPost = action.payload.post || action.payload.data
+                // state.posts.unshift(newPost)
             })
             .addCase(createPost.rejected, (state, action) => {
                 state.isLoading = false
                 state.error = action.payload
+            })
+            // upload post media
+            .addCase(uploadPostMedia.fulfilled, (state, action) => {
+                const updatedPost = action.payload.post || action.payload.data
+                const index = state.posts.findIndex(post => post._id === updatedPost._id || post.id === updatedPost.id)
+                if (index !== -1) {
+                    state.posts[index] = updatedPost
+                }
+                if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
+                    state.currentPost = updatedPost
+                }
             })
             // Update post
             .addCase(updatePost.fulfilled, (state, action) => {
@@ -446,30 +479,24 @@ const postsSlice = createSlice({
             })
             // Toggle like (replaces like/unlike)
             .addCase(toggleLike.fulfilled, (state, action) => {
-                const { postId, isLiked, likesCount } = action.payload
-                const post = state.posts.find(p => p._id === postId || p.id === postId)
-                if (post) {
-                    post.isLiked = isLiked
-                    post.likesCount = likesCount
+                const updatedPost = action.payload.post || action.payload.data
+                const index = state.posts.findIndex(post => post._id === updatedPost._id || post.id === updatedPost.id)
+                if (index !== -1) {
+                    state.posts[index] = updatedPost
                 }
-                if (state.currentPost && (state.currentPost._id === postId || state.currentPost.id === postId)) {
-                    state.currentPost.isLiked = isLiked
-                    state.currentPost.likesCount = likesCount
+                if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
+                    state.currentPost = updatedPost
                 }
             })
             // Add comment
             .addCase(addComment.fulfilled, (state, action) => {
-                const { postId, comment } = action.payload
-                const post = state.posts.find(p => p._id === postId || p.id === postId)
-                if (post) {
-                    post.comments = post.comments || []
-                    post.comments.push(comment.comment || comment.data)
-                    post.commentsCount = (post.commentsCount || 0) + 1
+                const updatedPost = action.payload.post || action.payload.data
+                const index = state.posts.findIndex(post => post._id === updatedPost._id || post.id === updatedPost.id)
+                if (index !== -1) {
+                    state.posts[index] = updatedPost
                 }
-                if (state.currentPost && (state.currentPost._id === postId || state.currentPost.id === postId)) {
-                    state.currentPost.comments = state.currentPost.comments || []
-                    state.currentPost.comments.push(comment.comment || comment.data)
-                    state.currentPost.commentsCount = (state.currentPost.commentsCount || 0) + 1
+                if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
+                    state.currentPost = updatedPost
                 }
             })
             // Delete comment
