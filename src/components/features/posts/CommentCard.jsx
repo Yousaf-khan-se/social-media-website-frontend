@@ -35,18 +35,18 @@ export const CommentCard = ({ comment, postId }) => {
     return (
         <div className="flex space-x-3 p-3 border-b border-border">
             <Avatar className="h-8 w-8">
-                <AvatarImage src={comment.author?.profilePicture} alt={`${comment.author?.firstName} ${comment.author?.lastName}`} />
-                <AvatarFallback className="text-xs">{comment.author?.firstName?.charAt(0)}{comment.author?.lastName?.charAt(0)}</AvatarFallback>
+                <AvatarImage src={comment.user?.profilePicture} alt={`${comment.user?.firstName} ${comment.user?.lastName}`} />
+                <AvatarFallback className="text-xs">{comment.user?.firstName?.charAt(0)}{comment.user?.lastName?.charAt(0)}</AvatarFallback>
             </Avatar>
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-1">
-                    <span className="font-medium text-sm">{comment.author?.firstName} {comment.author?.lastName}</span>
-                    <span className="text-muted-foreground text-sm">@{comment.author?.username}</span>
+                    <span className="font-medium text-sm">{comment.user?.firstName} {comment.user?.lastName}</span>
+                    <span className="text-muted-foreground text-sm">@{comment.user?.username}</span>
                     <span className="text-muted-foreground text-sm">·</span>
                     <span className="text-muted-foreground text-sm">{formatDate(comment.createdAt)}</span>
                     <div className="flex-1" />
-                    {user && (user._id === comment.author?._id || user.id === comment.author?.id) && (
+                    {user && (user._id === comment.user?._id || user.id === comment.user?.id) && (
                         <Button
                             variant="ghost"
                             size="icon"

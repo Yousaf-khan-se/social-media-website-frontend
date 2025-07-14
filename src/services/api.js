@@ -7,10 +7,7 @@ const isProduction = API_BASE_URL.includes('vercel.app') || API_BASE_URL.include
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: isProduction ? 15000 : 10000, // Longer timeout for production
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    timeout: isProduction ? 25000 : 20000, // Longer timeout for production
     withCredentials: true, // Include cookies in requests
 })
 

@@ -6,7 +6,6 @@ import {
     Search,
     Bell,
     MessageCircle,
-    Bookmark,
     User,
     Settings
 } from 'lucide-react'
@@ -17,7 +16,6 @@ const navigation = [
     { name: 'Explore', href: '/explore', icon: Search },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },
-    { name: 'Bookmarks', href: '/bookmarks', icon: Bookmark },
     { name: 'Profile', href: '/profile', icon: User },
     { name: 'Settings', href: '/settings', icon: Settings },
 ]
