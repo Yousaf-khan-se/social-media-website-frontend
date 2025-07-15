@@ -68,38 +68,6 @@ export const uploadCoverPhoto = createAsyncThunk(
     }
 )
 
-export const followUser = createAsyncThunk(
-    'profile/followUser',
-    async (userId, { rejectWithValue }) => {
-        try {
-            const response = await api.post(`/users/${userId}/follow`)
-            const data = response.data
-            if (!data.success) {
-                return rejectWithValue(data)
-            }
-            return { userId, ...data }
-        } catch (error) {
-            return rejectWithValue(error.response?.data || { error: error.message })
-        }
-    }
-)
-
-export const unfollowUser = createAsyncThunk(
-    'profile/unfollowUser',
-    async (userId, { rejectWithValue }) => {
-        try {
-            const response = await api.delete(`/users/${userId}/follow`)
-            const data = response.data
-            if (!data.success) {
-                return rejectWithValue(data)
-            }
-            return { userId, ...data }
-        } catch (error) {
-            return rejectWithValue(error.response?.data || { error: error.message })
-        }
-    }
-)
-
 export const fetchFollowers = createAsyncThunk(
     'profile/fetchFollowers',
     async (userId, { rejectWithValue }) => {
@@ -188,28 +156,11 @@ const profileSlice = createSlice({
             })
             .addCase(updateProfile.fulfilled, (state, action) => {
                 state.isLoading = false
-                console.log('update Profile data: ', action.payload)
                 state.currentProfile = { ...state.currentProfile, ...action.payload.user }
             })
             .addCase(updateProfile.rejected, (state, action) => {
                 state.isLoading = false
                 state.error = action.payload
-            })
-            // Follow user
-            .addCase(followUser.fulfilled, (state, action) => {
-                if (state.currentProfile && state.currentProfile.id === action.payload.userId) {
-                    state.currentProfile.isFollowing = true
-                    state.currentProfile.followersCount += 1
-                }
-                state.isFollowing = true
-            })
-            // Unfollow user
-            .addCase(unfollowUser.fulfilled, (state, action) => {
-                if (state.currentProfile && state.currentProfile.id === action.payload.userId) {
-                    state.currentProfile.isFollowing = false
-                    state.currentProfile.followersCount -= 1
-                }
-                state.isFollowing = false
             })
             // Fetch followers
             .addCase(fetchFollowers.fulfilled, (state, action) => {

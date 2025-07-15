@@ -103,6 +103,7 @@ export const changePassword = createAsyncThunk(
     }
 )
 
+//update profile
 export const updateProfile = createAsyncThunk(
     'auth/updateProfile',
     async (profileData, { rejectWithValue }) => {
@@ -116,6 +117,38 @@ export const updateProfile = createAsyncThunk(
             return data
         } catch (error) {
             console.log('update Profile error: ', error)
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
+export const followUser = createAsyncThunk(
+    'profile/followUser',
+    async (userId, { rejectWithValue }) => {
+        try {
+            const response = await api.post(`/users/${userId}/follow`)
+            const data = response.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            return data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
+export const unfollowUser = createAsyncThunk(
+    'profile/unfollowUser',
+    async (userId, { rejectWithValue }) => {
+        try {
+            const response = await api.delete(`/users/${userId}/follow`)
+            const data = response.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            return data
+        } catch (error) {
             return rejectWithValue(error.response?.data || { error: error.message })
         }
     }
@@ -222,6 +255,16 @@ const authSlice = createSlice({
                 state.isAuthenticated = false
                 state.error = null
                 state.initialized = true
+            })
+            // Follow user
+            .addCase(followUser.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.user = { ...state.user, ...action.payload.user }
+            })
+            // Unfollow user
+            .addCase(unfollowUser.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.user = { ...state.user, ...action.payload.user }
             })
     },
 })
