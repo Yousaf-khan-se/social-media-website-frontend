@@ -9,6 +9,7 @@ import { Search, TrendingUp, Hash } from 'lucide-react'
 import { getExplore, searchPosts, getTrendingTopics, getSuggestedUsers, resetPosts } from '@/store/slices/postsSlice'
 import { followUser } from '@/store/slices/profileSlice'
 import { PostCard } from '@/components/features/posts/PostCard'
+import { clearError, clearProfiles, searchUsers } from '@/store/slices/profileListSlice'
 
 export const ExplorePage = () => {
     const dispatch = useDispatch()
@@ -20,15 +21,40 @@ export const ExplorePage = () => {
         isLoadingTrending,
         isLoadingSuggested
     } = useSelector(state => state.posts)
+
+    const {
+        profiles,
+        isLoadingProfiles,
+        error: ProfileLoadingError
+    } = useSelector(state => state.profileList)
+
     const [searchQuery, setSearchQuery] = useState('')
+    const [suggestedUserList, setSuggestedUserList] = useState([]);
 
     // Load explore posts, trending topics, and suggested users on mount
     useEffect(() => {
-        dispatch(resetPosts());
-        dispatch(getExplore({ page: 1, limit: 10 }))
-        dispatch(getTrendingTopics())
-        dispatch(getSuggestedUsers())
-    }, [dispatch])
+        if (searchQuery.trim() === '') {
+            dispatch(resetPosts());
+            dispatch(getExplore({ page: 1, limit: 10 }));
+            dispatch(getTrendingTopics());
+
+            const fetchSuggestedUsers = async () => {
+                dispatch(clearProfiles());
+                dispatch(clearError());
+                await dispatch(getSuggestedUsers()).unwrap();
+                setSuggestedUserList(suggestedUsers);
+            };
+
+            fetchSuggestedUsers();
+        }
+    }, [dispatch, searchQuery, suggestedUsers]);
+
+    useEffect(() => {
+        if (!isLoadingProfiles && profiles.length > 0) {
+            setSuggestedUserList(profiles);
+        }
+    }, [isLoadingProfiles, profiles]);
+
 
     // Handle search
     const handleSearch = async (e) => {
@@ -36,7 +62,8 @@ export const ExplorePage = () => {
         if (!searchQuery.trim()) return
 
         try {
-            await dispatch(searchPosts({ query: searchQuery.trim(), page: 1, limit: 10 }))
+            dispatch(searchUsers({ query: searchQuery.trim(), page: 1, limit: 10 }))
+            await dispatch(searchPosts({ query: searchQuery.trim(), page: 1, limit: 10 })).unwrap();
         } catch (error) {
             console.error('Search error:', error)
         }
@@ -119,10 +146,10 @@ export const ExplorePage = () => {
                             <CardTitle>People you might know</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            {isLoadingSuggested ? (
+                            {isLoadingSuggested || isLoadingProfiles ? (
                                 <div className="text-center text-muted-foreground py-4">Loading suggestions...</div>
-                            ) : suggestedUsers && suggestedUsers.length > 0 ? (
-                                suggestedUsers.map((user) => (
+                            ) : suggestedUserList && suggestedUserList.length > 0 ? (
+                                suggestedUserList.map((user) => (
                                     <div key={user._id || user.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10">
@@ -144,7 +171,13 @@ export const ExplorePage = () => {
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center text-muted-foreground py-4">No suggestions yet</div>
+                                <>
+                                    {ProfileLoadingError ? (
+                                        <div className="text-center text-muted-foreground py-4">{ProfileLoadingError || ProfileLoadingError.error || ProfileLoadingError.message || 'Error loading suggestions'}</div>
+                                    ) : (
+                                        <div className="text-center text-muted-foreground py-4">No suggestions yet</div>
+                                    )}
+                                </>
                             )}
                         </CardContent>
                     </Card>

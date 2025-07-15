@@ -49,8 +49,7 @@ import { useForm, FormProvider } from 'react-hook-form'
 
 // Constants
 const MAX_FILES = 10
-const MAX_FILE_SIZE_MB = 15
-const ENGAGEMENT_DISPLAY_THRESHOLD = 0
+const MAX_FILE_SIZE_MB = 45
 
 // Helper functions
 const isVideoFile = (url) => typeof url === 'string' && url.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)
@@ -295,18 +294,6 @@ export const PostCard = ({ post }) => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     const inputRef = useRef(null)
-    const methods = useForm()
-
-    // Early return for invalid post
-    if (!post) {
-        return (
-            <Card className="rounded-lg my-2 w-full">
-                <CardContent className="p-4 text-center text-muted-foreground">
-                    Post data unavailable.
-                </CardContent>
-            </Card>
-        )
-    }
 
     // Memoized computed values
     const authorInfo = useMemo(() => {
@@ -395,7 +382,8 @@ export const PostCard = ({ post }) => {
         setMediaFiles(prev => [...prev, ...validFiles])
     }, [mediaFiles.length])
 
-    const handleMediaUpload = useCallback(async () => {
+    const handleMediaUpload = useCallback(async (e) => {
+        e.preventDefault();
         if (mediaFiles.length === 0) return
 
         setErrorMsg("")
@@ -405,14 +393,14 @@ export const PostCard = ({ post }) => {
         mediaFiles.forEach(file => formData.append('media', file))
 
         try {
-            await dispatch(uploadPostMedia({ id: post._id || post.id, media: formData }))
+            await dispatch(uploadPostMedia({ id: post._id || post.id, media: formData })).unwrap();
             setMediaFiles([])
             setShowMediaUpload(false)
         } catch (err) {
-            setErrorMsg("Media upload failed. Please try again.")
-        } finally {
-            setIsUploading(false)
+            setErrorMsg("Media upload failed. Please try again.", err)
         }
+
+        setIsUploading(false);
     }, [dispatch, mediaFiles, post._id, post.id])
 
     const handleRemoveFile = useCallback((index) => {
@@ -441,13 +429,24 @@ export const PostCard = ({ post }) => {
                     { content: editContent, editedAt: new Date().toISOString() }
                 ]
             }
-        }))
+        })).unwrap();
     }, [dispatch, editContent, post._id, post.id, post.editHistory])
 
     const handleCancelEdit = useCallback(() => {
         setIsEditing(false)
         setEditContent(post.content || '')
     }, [post.content])
+
+    // Early return for invalid post
+    if (!post) {
+        return (
+            <Card className="rounded-lg my-2 w-full">
+                <CardContent className="p-4 text-center text-muted-foreground">
+                    Post data unavailable.
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card className="rounded-lg my-2 w-full">

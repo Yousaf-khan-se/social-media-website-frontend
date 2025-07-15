@@ -149,6 +149,8 @@ const initialState = {
     isLoading: false,
     error: null,
     isFollowing: false,
+    limit: 10,
+    hasMore: false,
 }
 
 const profileSlice = createSlice({
@@ -217,6 +219,7 @@ const profileSlice = createSlice({
             .addCase(fetchFollowing.fulfilled, (state, action) => {
                 state.following = action.payload
             })
+
     },
 })
 
