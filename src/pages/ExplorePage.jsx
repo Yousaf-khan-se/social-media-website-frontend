@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Search, TrendingUp, Hash } from 'lucide-react'
 import { getExplore, searchPosts, getTrendingTopics, getSuggestedUsers, resetPosts } from '@/store/slices/postsSlice'
-import { followUser } from '@/store/slices/profileSlice'
+import { followUser, unfollowUser } from '@/store/slices/authSlice'
 import { PostCard } from '@/components/features/posts/PostCard'
 import { clearError, clearProfiles, searchUsers } from '@/store/slices/profileListSlice'
 
@@ -23,6 +23,10 @@ export const ExplorePage = () => {
     } = useSelector(state => state.posts)
 
     const {
+        user: currentUser,
+    } = useSelector(state => state.auth)
+
+    const {
         profiles,
         isLoadingProfiles,
         error: ProfileLoadingError
@@ -30,6 +34,7 @@ export const ExplorePage = () => {
 
     const [searchQuery, setSearchQuery] = useState('')
     const [suggestedUserList, setSuggestedUserList] = useState([]);
+    const [ProcessingFollowRequest, setProcessingFollowRequest] = useState(false)
 
     // Load explore posts, trending topics, and suggested users on mount
     useEffect(() => {
@@ -53,12 +58,14 @@ export const ExplorePage = () => {
         if (!isLoadingProfiles && profiles.length > 0) {
             setSuggestedUserList(profiles);
         }
+
     }, [isLoadingProfiles, profiles]);
 
 
     // Handle search
     const handleSearch = async (e) => {
-        e.preventDefault()
+        if (e) e.preventDefault();
+
         if (!searchQuery.trim()) return
 
         try {
@@ -76,13 +83,20 @@ export const ExplorePage = () => {
     }
 
     // Handle follow user
-    const handleFollowUser = async (userId) => {
+    const handleFollowUser = async (userId, action) => {
+
+        if (action === 'You') return; // Don't allow following yourself
         try {
-            await dispatch(followUser(userId))
+            setProcessingFollowRequest(true)
+            if (action === 'Follow') await dispatch(followUser(userId)).unwrap();
+            else if (action === 'Unfollow') await dispatch(unfollowUser(userId)).unwrap();
             // Refresh suggested users list
             dispatch(getSuggestedUsers())
         } catch (error) {
             console.error('Follow error:', error)
+        } finally {
+            setProcessingFollowRequest(false)
+            handleSearch(null);
         }
     }
 
@@ -164,9 +178,21 @@ export const ExplorePage = () => {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => handleFollowUser(user._id || user.id)}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handleFollowUser(user._id || user.id, e.target.textContent)
+                                            }}
                                         >
-                                            Follow
+                                            {
+                                                ProcessingFollowRequest ? 'verifying status...' :
+                                                    (
+                                                        user._id === currentUser._id ? 'You'
+                                                            :
+                                                            (
+                                                                currentUser.following.find(follower => follower._id === user._id) ? 'Unfollow' : 'Follow'
+                                                            )
+                                                    )
+                                            }
                                         </Button>
                                     </div>
                                 ))
