@@ -304,6 +304,7 @@ const initialState = {
     suggestedUsers: [],
     isLoadingTrending: false,
     isLoadingSuggested: false,
+    limit: 10,
 }
 
 const postsSlice = createSlice({
@@ -389,13 +390,16 @@ const postsSlice = createSlice({
             })
             .addCase(searchPosts.fulfilled, (state, action) => {
                 state.isLoading = false
-                if (action.payload.page === 1) {
-                    state.posts = action.payload.posts || action.payload.data || []
+                if (action.payload.pagination.page === 1) {
+                    state.posts = action.payload.posts || []
                 } else {
-                    state.posts = [...state.posts, ...(action.payload.posts || action.payload.data || [])]
+                    state.posts = [...state.posts, ...(action.payload.posts || [])]
                 }
-                state.hasMore = action.payload.hasMore
-                state.page = action.payload.page
+                state.page = action.payload.pagination.page
+                // Optionally calculate hasMore:
+                const total = action.payload.pagination.total || 0
+                state.limit = action.payload.pagination.limit || 10
+                state.hasMore = state.posts.length < total
             })
             .addCase(searchPosts.rejected, (state, action) => {
                 state.isLoading = false

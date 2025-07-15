@@ -75,7 +75,7 @@ export const CreatePostCard = () => {
                 setIsUploading(true);
                 const formData = new FormData();
                 mediaFiles.forEach(file => formData.append('media', file));
-                const mediaResult = await dispatch(uploadPostMedia({ id: post._id || post.id, media: formData }));
+                const mediaResult = await dispatch(uploadPostMedia({ id: post._id || post.id, media: formData })).unwrap();
                 setIsUploading(false);
 
                 if (!mediaResult.payload || !mediaResult.payload.success) {
