@@ -75,34 +75,6 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString()
 }
 
-// Enhanced Post Stats Component
-const PostStats = ({ likesCount, commentsCount, sharesCount }) => {
-    if (likesCount === 0 && commentsCount === 0 && sharesCount === 0) return null
-
-    return (
-        <div className="flex items-center gap-4 text-sm text-muted-foreground py-2">
-            {likesCount > 0 && (
-                <span className="flex items-center gap-1">
-                    <Heart className="h-4 w-4 text-red-500" />
-                    {formatEngagementCount(likesCount)}
-                </span>
-            )}
-            {commentsCount > 0 && (
-                <span className="flex items-center gap-1">
-                    <MessageCircle className="h-4 w-4" />
-                    {formatEngagementCount(commentsCount)}
-                </span>
-            )}
-            {sharesCount > 0 && (
-                <span className="flex items-center gap-1">
-                    <Share className="h-4 w-4" />
-                    {formatEngagementCount(sharesCount)}
-                </span>
-            )}
-        </div>
-    )
-}
-
 // Enhanced Post Actions Component
 const PostActions = ({
     isLiked,
@@ -606,13 +578,6 @@ export const PostCard = ({ post }) => {
                                 )}
                             </>
                         )}
-
-                        {/* Engagement Stats */}
-                        <PostStats
-                            likesCount={engagementCounts.likes}
-                            commentsCount={engagementCounts.comments}
-                            sharesCount={engagementCounts.shares}
-                        />
 
                         {/* Separator */}
                         {(engagementCounts.likes > 0 || engagementCounts.comments > 0 || engagementCounts.shares > 0) && (
