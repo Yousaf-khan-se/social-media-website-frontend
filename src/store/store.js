@@ -4,6 +4,7 @@ import postsReducer from './slices/postsSlice'
 import profileReducer from './slices/profileSlice'
 import notificationsReducer from './slices/notificationsSlice'
 import profileListSlice from './slices/profileListSlice'
+import chatReducer from './slices/chatSlice'
 
 export const store = configureStore({
     reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
         profile: profileReducer,
         notifications: notificationsReducer,
         profileList: profileListSlice,
+        chats: chatReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

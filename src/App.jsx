@@ -11,8 +11,7 @@ import { ProfilePage } from './pages/ProfilePage'
 import { PostPage } from './pages/PostPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import './App.css'
-import { CreatePostCard } from './components/features/posts/CreatePostCard'
-import { CommentCard } from './components/features/posts/CommentCard'
+import Messaging from './pages/Messaging'
 
 function App() {
   return (
@@ -54,13 +53,10 @@ function App() {
             } />
             <Route path="messages" element={
               <ProtectedRoute>
-                <h1 className='text-2xl font-bold text-center pt-20'>Coming Soon ...</h1>
+                <Messaging />
               </ProtectedRoute>
-            } /><Route path="bookmarks" element={
-              <ProtectedRoute>
-                <h1 className='text-2xl font-bold text-center pt-20'>Coming Soon ...</h1>
-              </ProtectedRoute>
-            } />
+            }
+            />
             <Route path="settings" element={
               <ProtectedRoute>
                 <h1 className='text-2xl font-bold text-center pt-20'>Under Development ...</h1>
