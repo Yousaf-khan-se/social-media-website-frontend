@@ -3,11 +3,11 @@ import axios from 'axios'
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4090/api'
 
 // Environment detection
-const isProduction = API_BASE_URL.includes('vercel.app') || API_BASE_URL.includes('netlify.app')
+// const isProduction = API_BASE_URL.includes('vercel.app') || API_BASE_URL.includes('netlify.app')
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: isProduction ? 45000 : 20000, // Longer timeout for production
+    timeout: 45000, // Longer timeout for production
     withCredentials: true, // Include cookies in requests
 })
 
