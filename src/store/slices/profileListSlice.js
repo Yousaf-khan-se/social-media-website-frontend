@@ -115,16 +115,16 @@ const profileListSlice = createSlice({
                 state.error = null
             })
             .addCase(fetchAuthUserFollowings.fulfilled, (state, action) => {
-                state.isLoadingProfiles = false
-                if (action.payload.pagination.page === 1) {
-                    state.profiles = action.payload.profiles || []
-                } else {
-                    state.profiles = [...state.profiles, ...(action.payload.profiles || [])]
-                }
-                state.page = action.payload.pagination.page
-                const total = action.payload.pagination.total || 0
-                state.limit = action.payload.pagination.limit || 10
-                state.hasMore = state.profiles.length < total
+                const uniqueProfiles = new Map();
+                state.isLoadingProfiles = false;
+                [...state.profiles, ...(action.payload.profiles || [])].forEach(
+                    profile => uniqueProfiles.set(profile._id, profile)
+                );
+                state.profiles = Array.from(uniqueProfiles.values());
+                state.page = action.payload.pagination.page;
+                const total = action.payload.pagination.total || 0;
+                state.limit = action.payload.pagination.limit || 10;
+                state.hasMore = state.profiles.length < total;
             })
             .addCase(fetchAuthUserFollowings.rejected, (state, action) => {
                 state.isLoadingProfiles = false
@@ -136,16 +136,16 @@ const profileListSlice = createSlice({
                 state.error = null
             })
             .addCase(fetchAuthUserFollowers.fulfilled, (state, action) => {
-                state.isLoadingProfiles = false
-                if (action.payload.pagination.page === 1) {
-                    state.profiles = action.payload.profiles || []
-                } else {
-                    state.profiles = [...state.profiles, ...(action.payload.profiles || [])]
-                }
-                state.page = action.payload.pagination.page
-                const total = action.payload.pagination.total || 0
-                state.limit = action.payload.pagination.limit || 10
-                state.hasMore = state.profiles.length < total
+                const uniqueProfiles = new Map();
+                state.isLoadingProfiles = false;
+                [...state.profiles, ...(action.payload.profiles || [])].forEach(
+                    profile => uniqueProfiles.set(profile._id, profile)
+                );
+                state.profiles = Array.from(uniqueProfiles.values());
+                state.page = action.payload.pagination.page;
+                const total = action.payload.pagination.total || 0;
+                state.limit = action.payload.pagination.limit || 10;
+                state.hasMore = state.profiles.length < total;
             })
             .addCase(fetchAuthUserFollowers.rejected, (state, action) => {
                 state.isLoadingProfiles = false

@@ -23,12 +23,15 @@ const NewChatDialog = ({ isOpen, onClose }) => {
     const [step, setStep] = useState(1) // 1: select users, 2: group details
 
     useEffect(() => {
-        if (isOpen) {
-            // Fetch all the followers and followings if there is are no queries
-            // dispatch(searchUsers({ query: '', limit: 50 }))
-            dispatch(fetchAuthUserFollowings({ query: '', limit: 50 }))
-            dispatch(fetchAuthUserFollowers({ query: '', limit: 50 }))
-        }
+        (async () => {
+            if (isOpen) {
+                // Fetch all the followers and followings if there is are no queries
+                // dispatch(searchUsers({ query: '', limit: 50 }))
+                await dispatch(fetchAuthUserFollowings({ query: '', limit: 50 })).unwrap()
+                await dispatch(fetchAuthUserFollowers({ query: '', limit: 50 })).unwrap()
+            }
+        })();
+
     }, [isOpen, dispatch])
 
     const filteredProfiles = profiles.filter(profile => {

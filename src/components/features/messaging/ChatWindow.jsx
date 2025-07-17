@@ -5,14 +5,17 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { fetchChatMessages, addMessage, setTypingUsers, markMessageAsSeen } from '@/store/slices/chatSlice'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { fetchChatMessages, addMessage, setTypingUsers, markMessageAsSeen, deleteChat } from '@/store/slices/chatSlice'
+import { useUnderDevelopment } from '@/hooks/useUnderDevelopment'
 import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
-import { Phone, Video, MoreVertical, ArrowLeft, Users } from 'lucide-react'
+import { Phone, Video, MoreVertical, ArrowLeft, Users, Trash2 } from 'lucide-react'
 import socketService from '@/services/socketService'
 
 const ChatWindow = ({ onBack }) => {
     const dispatch = useDispatch()
+    const { showUnderDevelopmentMessage } = useUnderDevelopment()
     const {
         activeChat,
         chats,
@@ -30,7 +33,26 @@ const ChatWindow = ({ onBack }) => {
 
     const currentChat = chats.find(chat => chat._id === activeChat)
     const currentMessages = useMemo(() => messages[activeChat] || [], [messages, activeChat])
-    const currentTypingUsers = typingUsers[activeChat] || []
+    const currentTypingUsers = useMemo(() => typingUsers[activeChat] || [], [typingUsers, activeChat])
+
+    // Debug logging for typing users
+    useEffect(() => {
+        console.log('=== TYPING USERS STATE UPDATE ===')
+        console.log('Full typingUsers state:', typingUsers)
+        console.log('activeChat:', activeChat)
+        console.log('currentTypingUsers for this chat:', currentTypingUsers)
+        console.log('currentTypingUsers length:', currentTypingUsers.length)
+        if (currentTypingUsers.length > 0) {
+            console.log('First typing user:', currentTypingUsers[0])
+        }
+        console.log('current user from auth:', {
+            _id: user._id,
+            id: user.id,
+            username: user.username,
+            firstName: user.firstName
+        })
+        console.log('===========================')
+    }, [currentTypingUsers, user, typingUsers, activeChat])
 
     useEffect(() => {
         if (activeChat) {
@@ -53,11 +75,27 @@ const ChatWindow = ({ onBack }) => {
             // Mark as seen if chat is active
             if (activeChat === message.chatRoom) {
                 socketService.markAsSeen(message._id)
-                dispatch(markMessageAsSeen({ messageId: message._id, userId: user.id }))
+                dispatch(markMessageAsSeen({ messageId: message._id, userId: user._id || user.id }))
             }
         }
 
         const handleUserTyping = (data) => {
+            console.log('--- TYPING EVENT ---')
+            console.log('Typing user:', data.user.firstName, 'ID:', data.user.id)
+            console.log('Current user:', user.firstName, 'ID:', user._id || user.id)
+            console.log('Is typing:', data.isTyping)
+            console.log('Active chat:', activeChat)
+
+            // Get the current user's ID - could be _id or id
+            const currentUserId = user._id || user.id
+
+            // Don't show typing indicator for current user
+            if (data.user.id === currentUserId) {
+                console.log('❌ Filtering out current user typing event')
+                return
+            }
+
+            console.log('✅ Dispatching typing event for:', data.user.firstName)
             dispatch(setTypingUsers({
                 roomId: activeChat,
                 user: data.user,
@@ -68,7 +106,7 @@ const ChatWindow = ({ onBack }) => {
         const handleMessageSeen = (data) => {
             dispatch(markMessageAsSeen({
                 messageId: data.messageId,
-                userId: data.user.id
+                userId: data.user._id || data.user.id
             }))
         }
 
@@ -81,7 +119,7 @@ const ChatWindow = ({ onBack }) => {
             socketService.off('userTyping', handleUserTyping)
             socketService.off('messageSeen', handleMessageSeen)
         }
-    }, [activeChat, dispatch, user.id])
+    }, [activeChat, dispatch, user])
 
     useEffect(() => {
         // Scroll to bottom on new messages
@@ -99,7 +137,7 @@ const ChatWindow = ({ onBack }) => {
                         const messageId = entry.target.dataset.messageId
                         if (messageId) {
                             socketService.markAsSeen(messageId)
-                            dispatch(markMessageAsSeen({ messageId, userId: user.id }))
+                            dispatch(markMessageAsSeen({ messageId, userId: user._id || user.id }))
                         }
                     }
                 })
@@ -112,7 +150,7 @@ const ChatWindow = ({ onBack }) => {
         messageElements.forEach(el => observer.observe(el))
 
         return () => observer.disconnect()
-    }, [currentMessages, dispatch, user.id])
+    }, [currentMessages, dispatch, user._id, user.id])
 
     const handleLoadMore = async () => {
         if (loadingMore || !pagination[activeChat]?.hasMore) return
@@ -130,7 +168,7 @@ const ChatWindow = ({ onBack }) => {
 
     const getOtherParticipant = (chat) => {
         if (chat.isGroup) return null
-        return chat.participants.find(p => p._id !== user.id)
+        return chat.participants.find(p => p._id !== user._id && p._id !== user.id)
     }
 
     const getDisplayName = (chat) => {
@@ -179,6 +217,25 @@ const ChatWindow = ({ onBack }) => {
         return grouped
     }
 
+    const handleDeleteChat = async () => {
+        if (window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
+            try {
+                await dispatch(deleteChat(activeChat)).unwrap()
+                onBack() // Navigate back to chat list
+            } catch (error) {
+                console.error('Failed to delete chat:', error)
+            }
+        }
+    }
+
+    const handleVoiceCall = () => {
+        showUnderDevelopmentMessage('Voice calling')
+    }
+
+    const handleVideoCall = () => {
+        showUnderDevelopmentMessage('Video calling')
+    }
+
     if (!activeChat) {
         return (
             <div className="flex-1 flex items-center justify-center bg-gray-50">
@@ -211,7 +268,7 @@ const ChatWindow = ({ onBack }) => {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b bg-white">
+            <div className="flex items-center justify-between p-5 border-b bg-white">
                 <div className="flex items-center space-x-3">
                     <Button
                         variant="ghost"
@@ -241,15 +298,25 @@ const ChatWindow = ({ onBack }) => {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={handleVoiceCall}>
                         <Phone className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={handleVideoCall}>
                         <Video className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleDeleteChat} className="text-red-600 focus:text-red-600">
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Chat
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
 
@@ -289,7 +356,7 @@ const ChatWindow = ({ onBack }) => {
                                 </div>
 
                                 {dayMessages.map((message, index) => {
-                                    const isOwn = message.sender._id === user.id
+                                    const isOwn = message.sender._id === user._id || message.sender._id === user.id
                                     const showAvatar = !isOwn && (
                                         index === 0 ||
                                         dayMessages[index - 1].sender._id !== message.sender._id
@@ -327,6 +394,10 @@ const ChatWindow = ({ onBack }) => {
                                         : `${currentTypingUsers.length} people are typing...`
                                     }
                                 </div>
+                                {/* Debug info */}
+                                {/* <div className="text-xs text-red-500">
+                                    (Debug: {JSON.stringify(currentTypingUsers.map(u => ({ id: u.id, name: u.firstName })))})
+                                </div> */}
                             </div>
                         )}
 

@@ -168,17 +168,27 @@ const chatSlice = createSlice({
         },
         setTypingUsers: (state, action) => {
             const { roomId, user, isTyping } = action.payload
+            console.log('setTypingUsers action:', { roomId, user, isTyping })
+
             if (!state.typingUsers[roomId]) {
                 state.typingUsers[roomId] = []
             }
 
             if (isTyping) {
-                if (!state.typingUsers[roomId].find(u => u.id === user.id)) {
+                // Check if user is already in typing list
+                const existingUserIndex = state.typingUsers[roomId].findIndex(u => u.id === user.id)
+                if (existingUserIndex === -1) {
+                    console.log('Adding user to typing list:', user.firstName)
                     state.typingUsers[roomId].push(user)
+                } else {
+                    console.log('User already in typing list:', user.firstName)
                 }
             } else {
+                console.log('Removing user from typing list:', user.firstName)
                 state.typingUsers[roomId] = state.typingUsers[roomId].filter(u => u.id !== user.id)
             }
+
+            console.log('Updated typing users for room:', roomId, state.typingUsers[roomId])
         },
         setSearchQuery: (state, action) => {
             state.searchQuery = action.payload
