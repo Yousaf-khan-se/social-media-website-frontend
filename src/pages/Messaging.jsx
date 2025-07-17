@@ -82,15 +82,15 @@ const Messaging = () => {
     return (
         <div className="h-screen bg-gray-50">
             {/* Connection Status */}
-            <div className={`fixed bottom-10 md:bottom-4 right-4 z-50 px-3 py-2 rounded-lg text-sm font-medium ${isConnected
+            <div className={`fixed top-[0.15rem] right-[0.15rem] z-50 p-[0.2rem] rounded-lg text-[0.5rem] font-medium ${isConnected
                 ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800'
                 }`}>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
                     {isConnected ? (
-                        <Wifi className="h-4 w-4" />
+                        <Wifi className="h-2 w-2" />
                     ) : (
-                        <WifiOff className="h-4 w-4" />
+                        <WifiOff className="h-2 w-2" />
                     )}
                     <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
                 </div>
@@ -115,7 +115,7 @@ const Messaging = () => {
 
             <div className="flex h-full">
                 {/* Chat List - Desktop always visible, Mobile conditional */}
-                <div className={`w-full lg:w-80 xl:w-96 bg-white border-r ${showChatWindow ? 'hidden lg:block' : 'block'
+                <div className={`w-full lg:w-[25rem] bg-white border-r ${showChatWindow ? 'hidden lg:block' : 'block'
                     }`}>
                     <ChatList onNewChat={handleNewChat} />
                 </div>

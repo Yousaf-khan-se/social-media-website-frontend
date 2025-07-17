@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { setActiveChat, setSearchQuery } from '@/store/slices/chatSlice'
-import { Search, Users, MessageCircle, Plus } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { setActiveChat, setSearchQuery, deleteChat } from '@/store/slices/chatSlice'
+import { Search, Users, MessageCircle, Plus, MoreVertical, Trash2 } from 'lucide-react'
 
 const ChatList = ({ onNewChat }) => {
     const dispatch = useDispatch()
@@ -22,6 +23,17 @@ const ChatList = ({ onNewChat }) => {
 
     const handleSearchChange = (e) => {
         dispatch(setSearchQuery(e.target.value))
+    }
+
+    const handleDeleteChat = async (chatId, e) => {
+        e.stopPropagation()
+        if (window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
+            try {
+                await dispatch(deleteChat(chatId)).unwrap()
+            } catch (error) {
+                console.error('Failed to delete chat:', error)
+            }
+        }
     }
 
     const formatLastMessage = (message) => {
@@ -54,7 +66,7 @@ const ChatList = ({ onNewChat }) => {
 
     const getOtherParticipant = (chat) => {
         if (chat.isGroup) return null
-        return chat.participants.find(p => p._id !== user.id)
+        return chat.participants.find(p => p._id !== user._id && p._id !== user.id)
     }
 
     const getDisplayName = (chat) => {
@@ -92,7 +104,7 @@ const ChatList = ({ onNewChat }) => {
         <div className="flex flex-col h-full">
             {/* Header */}
             <div className="p-4 border-b">
-                <div className="lg:hidden flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold">Chats</h2>
                     <Button
                         size="sm"
@@ -156,7 +168,7 @@ const ChatList = ({ onNewChat }) => {
                         filteredByTab.map((chat) => (
                             <Card
                                 key={chat._id}
-                                className={`mb-2 cursor-pointer transition-colors hover:bg-gray-50 ${activeChat === chat._id ? 'bg-blue-50 border-blue-200' : ''
+                                className={`mb-2 cursor-pointer transition-colors hover:bg-gray-50 group ${activeChat === chat._id ? 'bg-blue-50 border-blue-200' : ''
                                     }`}
                                 onClick={() => handleChatSelect(chat)}
                             >
@@ -188,11 +200,32 @@ const ChatList = ({ onNewChat }) => {
                                                     <span className="text-xs text-gray-500">
                                                         {formatTime(chat.updatedAt)}
                                                     </span>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <MoreVertical className="h-3 w-3" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => handleDeleteChat(chat._id, e)}
+                                                                className="text-red-600 focus:text-red-600"
+                                                            >
+                                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                                Delete Chat
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             </div>
 
                                             <p className="text-sm text-gray-600 truncate mt-1">
-                                                {chat.lastMessage?.sender?._id === user.id ? 'You: ' : ''}
+                                                {chat.lastMessage?.sender?._id === user._id || chat.lastMessage?.sender?._id === user.id ? 'You: ' : ''}
                                                 {formatLastMessage(chat.lastMessage)}
                                             </p>
                                         </div>

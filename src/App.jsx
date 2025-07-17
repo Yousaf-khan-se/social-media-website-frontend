@@ -10,6 +10,7 @@ import { NotificationsPage } from './pages/NotificationsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { PostPage } from './pages/PostPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { Toaster } from './components/ui/toaster'
 import './App.css'
 import Messaging from './pages/Messaging'
 
@@ -65,6 +66,7 @@ function App() {
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <Toaster />
       </div>
     </Router>
   )

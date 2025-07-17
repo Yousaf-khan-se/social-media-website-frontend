@@ -3,17 +3,18 @@ import { useSelector, useDispatch } from 'react-redux'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { uploadChatMedia } from '@/store/slices/chatSlice'
+import { useUnderDevelopment } from '@/hooks/useUnderDevelopment'
 import { Send, Paperclip, Image, Smile, Mic } from 'lucide-react'
 import socketService from '@/services/socketService'
 
 const MessageInput = ({ roomId }) => {
     const dispatch = useDispatch()
+    const { showUnderDevelopmentMessage } = useUnderDevelopment()
     const { loading } = useSelector(state => state.chats)
     const [message, setMessage] = useState('')
     const [isTyping, setIsTyping] = useState(false)
     const [selectedFiles, setSelectedFiles] = useState([])
-    const [showEmojiPicker, setShowEmojiPicker] = useState(false)
-    const [isRecording, setIsRecording] = useState(false)
+    const [isRecording] = useState(false)
 
     const fileInputRef = useRef(null)
     const imageInputRef = useRef(null)
@@ -66,9 +67,8 @@ const MessageInput = ({ roomId }) => {
                 return
             }
         }
-
         // Send text message
-        if (message.trim()) {
+        else if (message.trim()) {
             socketService.sendMessage({
                 roomId,
                 content: message.trim(),
@@ -133,10 +133,8 @@ const MessageInput = ({ roomId }) => {
         return null
     }
 
-    const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾']
-
     return (
-        <div className="border-t bg-white p-4">
+        <div className="border-t bg-white p-4 mb-8 md:m-0">
             {/* File previews */}
             {selectedFiles.length > 0 && (
                 <div className="mb-4">
@@ -169,28 +167,6 @@ const MessageInput = ({ roomId }) => {
                                     </Button>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Emoji picker */}
-            {showEmojiPicker && (
-                <div className="mb-4 p-2 border rounded-lg bg-gray-50 max-h-32 overflow-y-auto">
-                    <div className="grid grid-cols-10 gap-1">
-                        {emojis.map((emoji, index) => (
-                            <Button
-                                key={index}
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-lg hover:bg-gray-200"
-                                onClick={() => {
-                                    setMessage(prev => prev + emoji)
-                                    setShowEmojiPicker(false)
-                                }}
-                            >
-                                {emoji}
-                            </Button>
                         ))}
                     </div>
                 </div>
@@ -240,7 +216,7 @@ const MessageInput = ({ roomId }) => {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        onClick={() => showUnderDevelopmentMessage('Emoji picker')}
                     >
                         <Smile className="h-4 w-4" />
                     </Button>
@@ -263,7 +239,7 @@ const MessageInput = ({ roomId }) => {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setIsRecording(!isRecording)}
+                        onClick={() => showUnderDevelopmentMessage('Voice recording')}
                         className={isRecording ? 'text-red-500' : ''}
                     >
                         <Mic className="h-4 w-4" />

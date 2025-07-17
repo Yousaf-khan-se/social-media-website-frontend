@@ -2,8 +2,11 @@ import React from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { MoreHorizontal, Download, Eye } from 'lucide-react'
+import { useUnderDevelopment } from '@/hooks/useUnderDevelopment'
 
 const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
+    const { showUnderDevelopmentMessage } = useUnderDevelopment()
+
     const formatTime = (timestamp) => {
         const date = new Date(timestamp)
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -112,8 +115,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                     )}
 
                     <div className={`relative rounded-lg px-3 py-2 ${isOwn
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-900'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-900'
                         }`}>
                         {renderMessageContent()}
 
@@ -135,6 +138,7 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                             size="sm"
                             variant="ghost"
                             className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => showUnderDevelopmentMessage('Message actions')}
                         >
                             <MoreHorizontal className="h-3 w-3" />
                         </Button>
