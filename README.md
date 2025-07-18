@@ -1,6 +1,6 @@
 # deployment link
 
-https://social-media-website-backend-dsj2.onrender.com/api
+https://social-media-website-frontend-pied.vercel.app/
 
 
 # Social Media Platform Frontend
