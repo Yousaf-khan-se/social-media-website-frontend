@@ -142,7 +142,7 @@ const chatSlice = createSlice({
             if (!state.messages[chatRoom]) {
                 state.messages[chatRoom] = []
             }
-            state.messages[chatRoom].unshift(message)
+            state.messages[chatRoom].push(message)
 
             // Update last message in chat
             const chat = state.chats.find(c => c._id === chatRoom)
