@@ -15,11 +15,14 @@ const MessageInput = ({ roomId }) => {
     const [isTyping, setIsTyping] = useState(false)
     const [selectedFiles, setSelectedFiles] = useState([])
     const [isRecording] = useState(false)
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false)
 
     const fileInputRef = useRef(null)
     const imageInputRef = useRef(null)
     const textareaRef = useRef(null)
     const typingTimeoutRef = useRef(null)
+
+    const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾']
 
     useEffect(() => {
         return () => {
@@ -172,6 +175,28 @@ const MessageInput = ({ roomId }) => {
                 </div>
             )}
 
+            {/* Emoji picker */}
+            {showEmojiPicker && (
+                <div className="mb-4 p-2 border rounded-lg bg-gray-50 max-h-32 overflow-y-auto">
+                    <div className="grid grid-cols-10 gap-1">
+                        {emojis.map((emoji, index) => (
+                            <Button
+                                key={index}
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-lg hover:bg-gray-200"
+                                onClick={() => {
+                                    setMessage(prev => prev + emoji)
+                                    setShowEmojiPicker(false)
+                                }}
+                            >
+                                {emoji}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Message input */}
             <form onSubmit={handleSendMessage} className="flex items-end space-x-2">
                 <div className="flex space-x-1">
@@ -216,7 +241,7 @@ const MessageInput = ({ roomId }) => {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => showUnderDevelopmentMessage('Emoji picker')}
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     >
                         <Smile className="h-4 w-4" />
                     </Button>
