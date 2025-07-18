@@ -10,12 +10,24 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { setActiveChat, setSearchQuery, deleteChat } from '@/store/slices/chatSlice'
 import { Search, Users, MessageCircle, Plus, MoreVertical, Trash2 } from 'lucide-react'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const ChatList = ({ onNewChat }) => {
     const dispatch = useDispatch()
     const { filteredChats, searchQuery, activeChat, unreadCounts } = useSelector(state => state.chats)
     const { user } = useSelector(state => state.auth)
     const [activeTab, setActiveTab] = useState('all')
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     const handleChatSelect = (chat) => {
         dispatch(setActiveChat(chat._id))
@@ -27,12 +39,10 @@ const ChatList = ({ onNewChat }) => {
 
     const handleDeleteChat = async (chatId, e) => {
         e.stopPropagation()
-        if (window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
-            try {
-                await dispatch(deleteChat(chatId)).unwrap()
-            } catch (error) {
-                console.error('Failed to delete chat:', error)
-            }
+        try {
+            await dispatch(deleteChat(chatId)).unwrap()
+        } catch (error) {
+            console.error('Failed to delete chat:', error)
         }
     }
 
@@ -213,7 +223,12 @@ const ChatList = ({ onNewChat }) => {
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuItem
-                                                                onClick={(e) => handleDeleteChat(chat._id, e)}
+                                                                onClick={
+                                                                    (e) => {
+                                                                        e.preventDefault();
+                                                                        setShowDeleteConfirm(true);
+                                                                    }
+                                                                }
                                                                 className="text-red-600 focus:text-red-600"
                                                             >
                                                                 <Trash2 className="h-4 w-4 mr-2" />
@@ -221,6 +236,31 @@ const ChatList = ({ onNewChat }) => {
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
+
+                                                    {/* Delete Confirmation Dialog */}
+                                                    <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Are you sure you want to delete this chat? This action cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={
+                                                                        (e) => {
+                                                                            handleDeleteChat(chat._id, e);
+                                                                        }
+                                                                    }
+                                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                >
+                                                                    Delete
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </div>
                                             </div>
 

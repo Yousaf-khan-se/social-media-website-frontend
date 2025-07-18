@@ -12,6 +12,18 @@ import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
 import { Phone, Video, MoreVertical, ArrowLeft, Users, Trash2 } from 'lucide-react'
 import socketService from '@/services/socketService'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { current } from '@reduxjs/toolkit'
 
 const ChatWindow = ({ onBack }) => {
     const dispatch = useDispatch()
@@ -22,11 +34,13 @@ const ChatWindow = ({ onBack }) => {
         messages,
         typingUsers,
         loading,
-        pagination
+        pagination,
+        onlineUsers // []
     } = useSelector(state => state.chats)
     const { user } = useSelector(state => state.auth)
 
     const [loadingMore, setLoadingMore] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const messagesEndRef = useRef(null)
     const messagesContainerRef = useRef(null)
     const lastMessageRef = useRef(null)
@@ -199,8 +213,14 @@ const ChatWindow = ({ onBack }) => {
         if (chat.isGroup) {
             return `${chat.participants.length} members`
         }
-        // You can implement online status logic here
-        return 'Online'
+        else {
+            const otherUser = getOtherParticipant(chat)
+            if (otherUser) {
+                const isOnline = onlineUsers.some(onlineUser => onlineUser.id === otherUser._id)
+                return isOnline ? 'Online' : 'Offline'
+            }
+            return 'Unknown'
+        }
     }
 
     const groupMessagesByDate = (messages) => {
@@ -218,13 +238,11 @@ const ChatWindow = ({ onBack }) => {
     }
 
     const handleDeleteChat = async () => {
-        if (window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
-            try {
-                await dispatch(deleteChat(activeChat)).unwrap()
-                onBack() // Navigate back to chat list
-            } catch (error) {
-                console.error('Failed to delete chat:', error)
-            }
+        try {
+            await dispatch(deleteChat(activeChat)).unwrap()
+            onBack()
+        } catch (error) {
+            console.error('Failed to delete chat:', error)
         }
     }
 
@@ -311,12 +329,39 @@ const ChatWindow = ({ onBack }) => {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleDeleteChat} className="text-red-600 focus:text-red-600">
+                            <DropdownMenuItem onClick={
+                                (e) => {
+                                    e.preventDefault();
+                                    setShowDeleteConfirm(true);
+                                }
+                            }
+                                className="text-red-600 focus:text-red-600">
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Delete Chat
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+
+                    {/* Delete Confirmation Dialog */}
+                    <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to delete this chat? This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleDeleteChat}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                    Delete
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </div>
 

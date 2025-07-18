@@ -163,9 +163,20 @@ const chatSlice = createSlice({
                 }
             }
         },
-        setOnlineUsers: (state, action) => {
-            state.onlineUsers = action.payload
+        addOnlineUser: (state, action) => {
+            const user = action.payload;
+            console.log('Adding online user:', user.id, user.firstName);
+            // Check if user is already in online users list
+            if (!state.onlineUsers.find(u => u.id === user.id)) {
+                state.onlineUsers.push(user);
+            }
         },
+        removeOnlineUser: (state, action) => {
+            const user = action.payload;
+            console.log('Removing online user:', user.id, user.firstName);
+            state.onlineUsers = state.onlineUsers.filter(u => u.id !== user.id);
+        }
+        ,
         setTypingUsers: (state, action) => {
             const { roomId, user, isTyping } = action.payload
             console.log('setTypingUsers action:', { roomId, user, isTyping })
@@ -326,7 +337,8 @@ export const {
     setActiveChat,
     addMessage,
     updateMessage,
-    setOnlineUsers,
+    addOnlineUser,
+    removeOnlineUser,
     setTypingUsers,
     setSearchQuery,
     markMessageAsSeen,
