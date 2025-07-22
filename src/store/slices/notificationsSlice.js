@@ -1,17 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import api from '../../services/api'
+import notificationService from '../../services/notificationService'
 
-// Async thunks
+// Async thunks for notifications
 export const fetchNotifications = createAsyncThunk(
     'notifications/fetchNotifications',
     async (params = {}, { rejectWithValue }) => {
         try {
-            const { page = 1, limit = 20, type, read } = params
+            const { page = 1, limit = 20, type, unreadOnly } = params
             const queryParams = new URLSearchParams({
                 page: page.toString(),
                 limit: limit.toString(),
                 ...(type && { type }),
-                ...(read !== undefined && { read: read.toString() }),
+                ...(unreadOnly !== undefined && { unreadOnly: unreadOnly.toString() })
             })
             const response = await api.get(`/notifications?${queryParams}`)
             const data = response.data
@@ -73,6 +74,81 @@ export const deleteNotification = createAsyncThunk(
     }
 )
 
+export const clearAllNotifications = createAsyncThunk(
+    'notifications/clearAllNotifications',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.delete('/notifications')
+            const data = response.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            return true
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
+// FCM Token management
+export const subscribeToPushNotifications = createAsyncThunk(
+    'notifications/subscribeToPushNotifications',
+    async (tokenData, { rejectWithValue }) => {
+        try {
+            const initialized = await notificationService.initialize()
+            if (!initialized) {
+                return rejectWithValue({ error: 'Failed to initialize push notifications' })
+            }
+            return { success: true, token: notificationService.fcmToken }
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
+export const unsubscribeFromPushNotifications = createAsyncThunk(
+    'notifications/unsubscribeFromPushNotifications',
+    async (_, { rejectWithValue }) => {
+        try {
+            await notificationService.disable()
+            return { success: true }
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
+// Notification settings
+export const fetchNotificationSettings = createAsyncThunk(
+    'notifications/fetchNotificationSettings',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await notificationService.getSettings()
+            if (!response.success) {
+                return rejectWithValue(response)
+            }
+            return response
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
+export const updateNotificationSettings = createAsyncThunk(
+    'notifications/updateNotificationSettings',
+    async (settings, { rejectWithValue }) => {
+        try {
+            const response = await notificationService.updateSettings(settings)
+            if (!response.success) {
+                return rejectWithValue(response)
+            }
+            return response
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
 const initialState = {
     notifications: [],
     unreadCount: 0,
@@ -80,6 +156,24 @@ const initialState = {
     error: null,
     hasMore: true,
     page: 1,
+    // Settings state
+    settings: {
+        push: true,
+        email: true,
+        inApp: true,
+        likes: true,
+        comments: true,
+        follows: true,
+        messages: true,
+        posts: true,
+        admin: true,
+    },
+    settingsLoading: false,
+    settingsError: null,
+    // Push notification state
+    pushSupported: false,
+    pushEnabled: false,
+    fcmToken: null,
 }
 
 const notificationsSlice = createSlice({
@@ -88,6 +182,7 @@ const notificationsSlice = createSlice({
     reducers: {
         clearError: (state) => {
             state.error = null
+            state.settingsError = null
         },
         resetNotifications: (state) => {
             state.notifications = []
@@ -96,9 +191,27 @@ const notificationsSlice = createSlice({
         },
         addNotification: (state, action) => {
             state.notifications.unshift(action.payload)
-            if (!action.payload.read) {
+            if (!action.payload.read && !action.payload.isRead) {
                 state.unreadCount += 1
             }
+        },
+        updateNotificationInList: (state, action) => {
+            const { id, updates } = action.payload
+            const notification = state.notifications.find(n =>
+                (n._id === id || n.id === id)
+            )
+            if (notification) {
+                Object.assign(notification, updates)
+            }
+        },
+        setPushSupport: (state, action) => {
+            state.pushSupported = action.payload
+        },
+        setPushEnabled: (state, action) => {
+            state.pushEnabled = action.payload
+        },
+        setFcmToken: (state, action) => {
+            state.fcmToken = action.payload
         },
     },
     extraReducers: (builder) => {
@@ -140,17 +253,79 @@ const notificationsSlice = createSlice({
             })
             // Delete notification
             .addCase(deleteNotification.fulfilled, (state, action) => {
-                const index = state.notifications.findIndex(n => n.id === action.payload)
+                const index = state.notifications.findIndex(n =>
+                    (n._id === action.payload || n.id === action.payload)
+                )
                 if (index !== -1) {
                     const notification = state.notifications[index]
-                    if (!notification.read) {
+                    if (!notification.read && !notification.isRead) {
                         state.unreadCount -= 1
                     }
                     state.notifications.splice(index, 1)
                 }
             })
+            // Clear all notifications
+            .addCase(clearAllNotifications.fulfilled, (state) => {
+                state.notifications = []
+                state.unreadCount = 0
+            })
+            // Push notification subscription
+            .addCase(subscribeToPushNotifications.pending, (state) => {
+                state.isLoading = true
+                state.error = null
+            })
+            .addCase(subscribeToPushNotifications.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.pushEnabled = true
+                state.fcmToken = action.payload.token
+                state.settings.push = true
+            })
+            .addCase(subscribeToPushNotifications.rejected, (state, action) => {
+                state.isLoading = false
+                state.error = action.payload
+                state.pushEnabled = false
+            })
+            // Push notification unsubscription
+            .addCase(unsubscribeFromPushNotifications.fulfilled, (state) => {
+                state.pushEnabled = false
+                state.fcmToken = null
+                state.settings.push = false
+            })
+            // Notification settings
+            .addCase(fetchNotificationSettings.pending, (state) => {
+                state.settingsLoading = true
+                state.settingsError = null
+            })
+            .addCase(fetchNotificationSettings.fulfilled, (state, action) => {
+                state.settingsLoading = false
+                state.settings = { ...state.settings, ...action.payload.data }
+            })
+            .addCase(fetchNotificationSettings.rejected, (state, action) => {
+                state.settingsLoading = false
+                state.settingsError = action.payload
+            })
+            .addCase(updateNotificationSettings.pending, (state) => {
+                state.settingsLoading = true
+                state.settingsError = null
+            })
+            .addCase(updateNotificationSettings.fulfilled, (state, action) => {
+                state.settingsLoading = false
+                state.settings = { ...state.settings, ...action.payload.data }
+            })
+            .addCase(updateNotificationSettings.rejected, (state, action) => {
+                state.settingsLoading = false
+                state.settingsError = action.payload
+            })
     },
 })
 
-export const { clearError, resetNotifications, addNotification } = notificationsSlice.actions
+export const {
+    clearError,
+    resetNotifications,
+    addNotification,
+    updateNotificationInList,
+    setPushSupport,
+    setPushEnabled,
+    setFcmToken
+} = notificationsSlice.actions
 export default notificationsSlice.reducer

@@ -1,15 +1,42 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Bell, Heart, MessageCircle, UserPlus, Settings } from 'lucide-react'
-import { fetchNotifications, markAsRead, markAllAsRead } from '@/store/slices/notificationsSlice'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import {
+    Bell,
+    Heart,
+    MessageCircle,
+    UserPlus,
+    Settings,
+    Filter,
+    MoreVertical,
+    Trash2,
+    Check
+} from 'lucide-react'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAllNotifications
+} from '@/store/slices/notificationsSlice'
+import NotificationSettings from '@/components/features/notifications/NotificationSettings'
 
 export const NotificationsPage = () => {
     const dispatch = useDispatch()
-    const { notifications, isLoading, error, unreadCount } = useSelector(state => state.notifications || {})
+    const { notifications, isLoading, error, unreadCount, hasMore, page } = useSelector(state => state.notifications || {})
+    const [showSettings, setShowSettings] = useState(false)
+    const [filterType, setFilterType] = useState('all')
 
     // Load notifications on mount
     useEffect(() => {
@@ -24,17 +51,84 @@ export const NotificationsPage = () => {
         dispatch(markAllAsRead())
     }
 
+    const handleDeleteNotification = (notificationId) => {
+        dispatch(deleteNotification(notificationId))
+    }
+
+    const handleClearAll = () => {
+        if (window.confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+            dispatch(clearAllNotifications())
+        }
+    }
+
+    const handleLoadMore = () => {
+        if (hasMore && !isLoading) {
+            dispatch(fetchNotifications({ page: page + 1, limit: 20 }))
+        }
+    }
+
     const getNotificationIcon = (type) => {
         switch (type) {
             case 'like':
                 return <Heart className="h-4 w-4 text-red-500" />
             case 'comment':
+            case 'message':
                 return <MessageCircle className="h-4 w-4 text-blue-500" />
             case 'follow':
                 return <UserPlus className="h-4 w-4 text-green-500" />
+            case 'share':
+                return <Heart className="h-4 w-4 text-purple-500" />
             default:
                 return <Bell className="h-4 w-4" />
         }
+    }
+
+    const getNotificationTime = (createdAt) => {
+        const now = new Date()
+        const notificationTime = new Date(createdAt)
+        const diffInMs = now - notificationTime
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+        const diffInHours = Math.floor(diffInMinutes / 60)
+        const diffInDays = Math.floor(diffInHours / 24)
+
+        if (diffInMinutes < 1) return 'Just now'
+        if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+        if (diffInHours < 24) return `${diffInHours}h ago`
+        if (diffInDays < 7) return `${diffInDays}d ago`
+        return notificationTime.toLocaleDateString()
+    }
+
+    const filteredNotifications = notifications?.filter(notification => {
+        if (filterType === 'all') return true
+        if (filterType === 'unread') return !notification.read && !notification.isRead
+        return notification.type === filterType
+    }) || []
+
+    const filterOptions = [
+        { value: 'all', label: 'All', count: notifications?.length || 0 },
+        { value: 'unread', label: 'Unread', count: unreadCount },
+        { value: 'like', label: 'Likes', count: notifications?.filter(n => n.type === 'like').length || 0 },
+        { value: 'comment', label: 'Comments', count: notifications?.filter(n => n.type === 'comment').length || 0 },
+        { value: 'follow', label: 'Follows', count: notifications?.filter(n => n.type === 'follow').length || 0 },
+        { value: 'message', label: 'Messages', count: notifications?.filter(n => n.type === 'message').length || 0 },
+    ]
+
+    if (showSettings) {
+        return (
+            <div className="flex-1 border-r border-border">
+                <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
+                    <div className="flex items-center justify-between px-4 py-3">
+                        <h1 className="text-xl font-semibold">Notification Settings</h1>
+                        <Button variant="ghost" size="sm" onClick={() => setShowSettings(false)}>
+                            Back to Notifications
+                        </Button>
+                    </div>
+                </div>
+                <div className="p-4">
+                    <NotificationSettings />
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -42,15 +136,55 @@ export const NotificationsPage = () => {
             <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
                 <div className="flex items-center justify-between px-4 py-3">
                     <h1 className="text-xl font-semibold">Notifications</h1>
-                    {unreadCount > 0 && (
-                        <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead}>
-                            Mark all as read
+                    <div className="flex items-center gap-2">
+                        {unreadCount > 0 && (
+                            <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead}>
+                                <Check className="h-4 w-4 mr-2" />
+                                Mark all as read
+                            </Button>
+                        )}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setShowSettings(true)}>
+                                    <Settings className="h-4 w-4 mr-2" />
+                                    Settings
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleClearAll} className="text-destructive">
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Clear all
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
+
+                {/* Filter tabs */}
+                <div className="flex items-center gap-1 px-4 py-2 border-b border-border/50">
+                    {filterOptions.map((option) => (
+                        <Button
+                            key={option.value}
+                            variant={filterType === option.value ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => setFilterType(option.value)}
+                            className="flex items-center gap-2"
+                        >
+                            {option.label}
+                            {option.count > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                    {option.count}
+                                </Badge>
+                            )}
                         </Button>
-                    )}
+                    ))}
                 </div>
             </div>
 
-            <ScrollArea className="h-[calc(100vh-60px)]">
+            <ScrollArea className="h-[calc(100vh-120px)]">
                 {error && (
                     <div className="p-8 text-center text-destructive">
                         {Array.isArray(error?.details?.errors)
@@ -60,48 +194,101 @@ export const NotificationsPage = () => {
                             : error?.error || error?.message || (typeof error === 'string' ? error : 'Failed to load notifications')}
                     </div>
                 )}
+
                 <div className="divide-y divide-border">
-                    {isLoading ? (
+                    {isLoading && filteredNotifications.length === 0 ? (
                         <div className="p-8 text-center text-muted-foreground">
                             Loading notifications...
                         </div>
-                    ) : notifications && notifications.length === 0 ? (
+                    ) : filteredNotifications.length === 0 ? (
                         <div className="p-8 text-center text-muted-foreground">
                             <Bell className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                            <p>No notifications yet</p>
+                            <p>
+                                {filterType === 'all'
+                                    ? 'No notifications yet'
+                                    : `No ${filterType} notifications`
+                                }
+                            </p>
                         </div>
-                    ) : notifications ? (
-                        notifications.map((notification) => (
+                    ) : (
+                        filteredNotifications.map((notification) => (
                             <div
                                 key={notification._id || notification.id}
-                                className={`p-4 hover:bg-accent cursor-pointer ${!notification.read ? 'bg-accent/50' : ''}`}
-                                onClick={() => !notification.read && handleMarkAsRead(notification._id || notification.id)}
+                                className={`p-4 hover:bg-accent/50 transition-colors ${!notification.read && !notification.isRead ? 'bg-accent/30' : ''
+                                    }`}
                             >
                                 <div className="flex items-start space-x-3">
                                     <div className="flex-shrink-0">
                                         {getNotificationIcon(notification.type)}
                                     </div>
                                     <Avatar className="h-8 w-8">
-                                        <AvatarImage src={notification.user?.profilePicture} alt={`${notification.user?.firstName} ${notification.user?.lastName}`} />
-                                        <AvatarFallback>{notification.user?.firstName?.charAt(0)}{notification.user?.lastName?.charAt(0)}</AvatarFallback>
+                                        <AvatarImage
+                                            src={notification.sender?.profilePicture || notification.user?.profilePicture}
+                                            alt={`${notification.sender?.firstName || notification.user?.firstName} ${notification.sender?.lastName || notification.user?.lastName}`}
+                                        />
+                                        <AvatarFallback>
+                                            {(notification.sender?.firstName || notification.user?.firstName)?.charAt(0)}
+                                            {(notification.sender?.lastName || notification.user?.lastName)?.charAt(0)}
+                                        </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm">
-                                            <span className="font-medium">{notification.user?.firstName} {notification.user?.lastName}</span>
-                                            <span className="text-muted-foreground"> {notification.message || notification.content}</span>
+                                            <span className="font-medium">
+                                                {notification.sender?.firstName || notification.user?.firstName} {notification.sender?.lastName || notification.user?.lastName}
+                                            </span>
+                                            <span className="text-muted-foreground"> {notification.message || notification.body || notification.content}</span>
                                         </p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            {new Date(notification.createdAt).toLocaleDateString()}
+                                            {getNotificationTime(notification.createdAt)}
                                         </p>
                                     </div>
-                                    {!notification.read && (
-                                        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {!notification.read && !notification.isRead && (
+                                            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
+                                        )}
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                {!notification.read && !notification.isRead && (
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleMarkAsRead(notification._id || notification.id)}
+                                                    >
+                                                        <Check className="h-4 w-4 mr-2" />
+                                                        Mark as read
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuItem
+                                                    onClick={() => handleDeleteNotification(notification._id || notification.id)}
+                                                    className="text-destructive"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
                                 </div>
                             </div>
                         ))
-                    ) : null}
+                    )}
                 </div>
+
+                {/* Load more button */}
+                {hasMore && filteredNotifications.length > 0 && (
+                    <div className="p-4 text-center">
+                        <Button
+                            variant="outline"
+                            onClick={handleLoadMore}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? 'Loading...' : 'Load more'}
+                        </Button>
+                    </div>
+                )}
             </ScrollArea>
         </div>
     )
