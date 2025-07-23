@@ -17,15 +17,13 @@ class NotificationService {
     // Initialize FCM and request permission
     async initialize() {
         if (!this.isSupported) {
-            console.log('Push notifications not supported');
             return false;
         }
 
         try {
             // Register service worker
             if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-                console.log('Service Worker registered:', registration);
+                await navigator.serviceWorker.register('/firebase-messaging-sw.js');
             }
 
             // Get FCM token
@@ -34,8 +32,9 @@ class NotificationService {
                 this.fcmToken = token;
                 await this.sendTokenToServer(token);
                 return true;
+            } else {
+                return false;
             }
-            return false;
         } catch (error) {
             console.error('Error initializing notifications:', error);
             return false;
@@ -51,10 +50,11 @@ class NotificationService {
             });
 
             if (response.data.success) {
-                console.log('FCM token sent to server successfully');
                 return true;
+            } else {
+                console.error('Backend rejected FCM token:', response.data);
+                return false;
             }
-            return false;
         } catch (error) {
             console.error('Error sending FCM token to server:', error);
             throw error;
@@ -76,6 +76,22 @@ class NotificationService {
         } catch (error) {
             console.error('Error removing FCM token from server:', error);
             throw error;
+        }
+    }
+
+    // Check if FCM token is registered with backend
+    async isTokenRegistered(token) {
+        try {
+            const response = await api.get('/notifications/fcm-token/check', {
+                params: { token }
+            });
+
+            const isRegistered = response.data.success && response.data.registered;
+            return isRegistered;
+        } catch (error) {
+            console.error('Error checking token registration:', error);
+            // If endpoint doesn't exist, assume token needs to be registered
+            return false;
         }
     }
 

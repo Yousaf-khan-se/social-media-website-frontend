@@ -5,6 +5,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-messaging-compat.js');
 
 // Initialize Firebase with configuration
+// Note: Service workers can't access import.meta.env, so we use the direct config
 firebase.initializeApp({
     apiKey: "AIzaSyAK64TS_voOkw2x5MF88_hFgCXrTfXlKsA",
     authDomain: "social-media-app-881bf.firebaseapp.com",
@@ -14,6 +15,8 @@ firebase.initializeApp({
     appId: "1:282136815664:web:525699f4b13bc8548ce5f5",
     measurementId: "G-40YXDWP7FW"
 });
+
+console.log('Firebase Service Worker initialized');
 
 const messaging = firebase.messaging();
 
@@ -36,7 +39,7 @@ messaging.onBackgroundMessage(function (payload) {
     };
 
     // Show the notification
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Get appropriate actions based on notification type
@@ -72,7 +75,7 @@ function getNotificationActions(type) {
 
 // Handle notification click
 self.addEventListener('notificationclick', function (event) {
-    console.log('Notification click received:', event);
+    console.log('Notification clicked:', event.action);
 
     event.notification.close();
 
@@ -132,12 +135,8 @@ self.addEventListener('notificationclick', function (event) {
 });
 
 // Handle notification close
-self.addEventListener('notificationclose', function (event) {
-    console.log('Notification closed:', event);
-
+self.addEventListener('notificationclose', function () {
     // Track notification close events (can be sent to analytics)
-    const data = event.notification.data || {};
-    console.log('Notification closed with data:', data);
 });
 
 // Install event

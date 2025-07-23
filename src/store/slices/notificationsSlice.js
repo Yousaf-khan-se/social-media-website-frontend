@@ -35,7 +35,7 @@ export const markAsRead = createAsyncThunk(
             if (!data.success) {
                 return rejectWithValue(data)
             }
-            return notificationId
+            return { ...data, notificationId };
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: error.message })
         }
@@ -226,7 +226,7 @@ const notificationsSlice = createSlice({
                 if (action.payload.page === 1) {
                     state.notifications = action.payload.notifications
                 } else {
-                    state.notifications = [...state.notifications, ...action.payload.notifications]
+                    state.notifications = action.payload.notifications;
                 }
                 state.unreadCount = action.payload.unreadCount
                 state.hasMore = action.payload.hasMore
@@ -238,10 +238,14 @@ const notificationsSlice = createSlice({
             })
             // Mark as read
             .addCase(markAsRead.fulfilled, (state, action) => {
-                const notification = state.notifications.find(n => n.id === action.payload)
-                if (notification && !notification.read) {
+                const notificationId = action.payload.notificationId || action.payload.notification?._id || action.payload.notification?.id
+                const notification = state.notifications.find(n =>
+                    n._id === notificationId || n.id === notificationId
+                )
+                if (notification && !notification.read && !notification.isRead) {
                     notification.read = true
-                    state.unreadCount -= 1
+                    notification.isRead = true
+                    state.unreadCount = Math.max(0, state.unreadCount - 1)
                 }
             })
             // Mark all as read
@@ -298,7 +302,7 @@ const notificationsSlice = createSlice({
             })
             .addCase(fetchNotificationSettings.fulfilled, (state, action) => {
                 state.settingsLoading = false
-                state.settings = { ...state.settings, ...action.payload.data }
+                state.settings = { ...state.settings, ...action.payload.notificationSettings }
             })
             .addCase(fetchNotificationSettings.rejected, (state, action) => {
                 state.settingsLoading = false
@@ -310,7 +314,7 @@ const notificationsSlice = createSlice({
             })
             .addCase(updateNotificationSettings.fulfilled, (state, action) => {
                 state.settingsLoading = false
-                state.settings = { ...state.settings, ...action.payload.data }
+                state.settings = { ...state.settings, ...action.payload.notificationSettings }
             })
             .addCase(updateNotificationSettings.rejected, (state, action) => {
                 state.settingsLoading = false
