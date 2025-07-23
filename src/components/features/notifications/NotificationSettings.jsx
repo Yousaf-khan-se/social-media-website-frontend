@@ -12,7 +12,6 @@ import {
     updateNotificationSettings,
     fetchNotificationSettings
 } from '@/store/slices/notificationsSlice';
-import NotificationTestPanel from './NotificationTestPanel';
 import {
     Bell,
     Mail,
@@ -42,7 +41,6 @@ const NotificationSettings = () => {
 
     const [localSettings, setLocalSettings] = useState(settings);
     const [isSaving, setIsSaving] = useState(false);
-    const [showTestPanel, setShowTestPanel] = useState(false);
 
     useEffect(() => {
         setLocalSettings(settings);
@@ -187,30 +185,6 @@ const NotificationSettings = () => {
 
     return (
         <div className="space-y-6">
-            {/* Test Panel Toggle */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <TestTube className="h-5 w-5" />
-                        Development Tools
-                    </CardTitle>
-                    <CardDescription>
-                        Test and debug notification functionality
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button
-                        variant={showTestPanel ? "default" : "outline"}
-                        onClick={() => setShowTestPanel(!showTestPanel)}
-                    >
-                        {showTestPanel ? "Hide Test Panel" : "Show Test Panel"}
-                    </Button>
-                </CardContent>
-            </Card>
-
-            {/* Test Panel */}
-            {showTestPanel && <NotificationTestPanel />}
-
             {/* Push Notifications Card */}
             <Card>
                 <CardHeader>

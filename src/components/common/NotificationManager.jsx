@@ -5,7 +5,8 @@ import {
     setPushSupport,
     setPushEnabled,
     setFcmToken,
-    fetchNotificationSettings
+    fetchNotificationSettings,
+    subscribeToPushNotifications
 } from '@/store/slices/notificationsSlice';
 import notificationService from '@/services/notificationService';
 import { onMessageListener, getStoredToken } from '@/services/firebase-messaging';
@@ -33,6 +34,24 @@ const NotificationManager = ({ children }) => {
                     if (storedToken) {
                         dispatch(setFcmToken(storedToken));
                         dispatch(setPushEnabled(true));
+
+                        // Ensure token is registered with backend
+                        try {
+                            await notificationService.sendTokenToServer(storedToken);
+                        } catch (error) {
+                            console.error('Error registering existing token with backend:', error);
+                        }
+                    } else {
+                        // Subscribe to push notifications (this will generate token and register with backend)
+                        try {
+                            const result = await dispatch(subscribeToPushNotifications()).unwrap();
+                            if (result.success) {
+                                dispatch(setFcmToken(result.token));
+                                dispatch(setPushEnabled(true));
+                            }
+                        } catch (error) {
+                            console.error('Error subscribing to push notifications:', error);
+                        }
                     }
 
                     // Fetch notification settings
@@ -51,53 +70,68 @@ const NotificationManager = ({ children }) => {
     useEffect(() => {
         if (!user || !pushEnabled) return;
 
+        console.log('🔥 Setting up foreground message listener for user:', user._id);
+
         // Set up foreground message listener
-        const unsubscribe = onMessageListener().then((payload) => {
-            console.log('Foreground notification received:', payload);
+        let cleanup;
 
-            // Add to notification list
-            if (payload.data) {
-                dispatch(addNotification({
-                    _id: Date.now().toString(),
-                    type: payload.data.type || 'notification',
-                    title: payload.notification?.title,
-                    message: payload.notification?.body,
-                    data: payload.data,
-                    isRead: false,
-                    createdAt: new Date().toISOString(),
-                    sender: {
-                        _id: payload.data.senderId,
-                        firstName: payload.data.senderName?.split(' ')[0] || 'Unknown',
-                        lastName: payload.data.senderName?.split(' ')[1] || 'User',
-                        profilePicture: payload.data.senderProfilePicture
+        const setupListener = async () => {
+            try {
+                const messagePromise = onMessageListener();
+
+                messagePromise.then((payload) => {
+                    console.log('🔔 New foreground message received:', payload);
+                    // Add to notification list
+                    if (payload.data) {
+                        const newNotification = {
+                            _id: payload.fcmMessageId || Date.now().toString(),
+                            type: payload.data.type || 'notification',
+                            title: payload.notification?.title,
+                            message: payload.notification?.body,
+                            data: payload.data,
+                            isRead: false,
+                            createdAt: new Date().toISOString(),
+                            sender: {
+                                _id: payload.data.senderId,
+                                firstName: payload.data.senderName?.split(' ')[0] || 'Unknown',
+                                lastName: payload.data.senderName?.split(' ')[1] || 'User',
+                                profilePicture: payload.data.senderProfilePicture
+                            }
+                        };
+
+                        dispatch(addNotification(newNotification));
                     }
-                }));
-            }
 
-            // Show toast notification if in-app notifications are enabled
-            if (settings.inApp) {
-                toast({
-                    title: payload.notification?.title || 'New Notification',
-                    description: payload.notification?.body,
-                    action: (
-                        <button
-                            onClick={() => handleNotificationClick(payload.data)}
-                            className="text-sm font-medium text-primary hover:underline"
-                        >
-                            View
-                        </button>
-                    )
+                    // Show toast notification if in-app notifications are enabled
+                    if (settings.inApp) {
+                        toast({
+                            title: payload.notification?.title || 'New Notification',
+                            description: payload.notification?.body,
+                            action: (
+                                <button
+                                    onClick={() => handleNotificationClick(payload.data)}
+                                    className="text-sm font-medium text-primary hover:underline"
+                                >
+                                    View
+                                </button>
+                            )
+                        });
+                    }
+                }).catch((error) => {
+                    console.error('Error in foreground message listener:', error);
                 });
-            }
-        }).catch((error) => {
-            console.error('Error setting up foreground listener:', error);
-        });
 
-        return () => {
-            if (typeof unsubscribe === 'function') {
-                unsubscribe();
+                cleanup = () => {
+                    // Note: onMessageListener returns a promise, not an unsubscribe function
+                };
+            } catch (error) {
+                console.error('Error setting up foreground listener:', error);
             }
         };
+
+        setupListener();
+
+        return cleanup;
     }, [user, pushEnabled, settings.inApp, dispatch, toast]);
 
     const handleNotificationClick = (data) => {
