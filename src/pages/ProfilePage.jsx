@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, Edit } from 'lucide-react'
+import { Calendar, Edit, Camera } from 'lucide-react'
 import { getUserPosts, getMyPosts, resetPosts } from '@/store/slices/postsSlice'
 import { PostCard } from '@/components/features/posts/PostCard'
-import { updateProfile } from '@/store/slices/authSlice'
+import { updateProfile, uploadProfilePicture } from '@/store/slices/authSlice'
 
 export const ProfilePage = () => {
     const { userId } = useParams()
@@ -22,11 +22,11 @@ export const ProfilePage = () => {
         lastName: user?.lastName || '',
         username: user?.username || '',
         email: user?.email || '',
-        bio: user?.bio || '',
-        profilePicture: user?.profilePicture || '',
+        bio: user?.bio || ''
     })
     const [formError, setFormError] = useState(null)
     const [formLoading, setFormLoading] = useState(false)
+    const [uploadingProfilePicture, setUploadingProfilePicture] = useState(false)
 
     // Determine if viewing own profile or another user's profile
     const isOwnProfile = !userId || userId === user?._id || userId === user?.id
@@ -39,7 +39,6 @@ export const ProfilePage = () => {
                 username: user.username || '',
                 email: user.email || '',
                 bio: user.bio || '',
-                profilePicture: user.profilePicture || '',
             })
         }
     }, [user])
@@ -83,6 +82,40 @@ export const ProfilePage = () => {
         }
     }
 
+    const handleProfilePictureUpload = async (event) => {
+        const file = event.target.files[0]
+        if (!file) return
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file')
+            return
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be less than 5MB')
+            return
+        }
+
+        setUploadingProfilePicture(true)
+        try {
+            const formData = new FormData()
+            formData.append('profilePicture', file)
+
+            const resultAction = await dispatch(uploadProfilePicture(formData))
+            if (uploadProfilePicture.fulfilled.match(resultAction)) {
+                // Success - the Redux state will be updated automatically
+            } else {
+                alert(resultAction.payload?.error || 'Failed to upload profile picture')
+            }
+        } catch {
+            alert('Failed to upload profile picture')
+        } finally {
+            setUploadingProfilePicture(false)
+        }
+    }
+
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
@@ -122,7 +155,6 @@ export const ProfilePage = () => {
                             <input name="username" placeholder="Username" value={form.username} onChange={handleChange} required className="w-full border rounded px-3 py-2" />
                             <input name="email" placeholder="Email" type="email" value={form.email} onChange={handleChange} required className="w-full border rounded px-3 py-2" />
                             <textarea name="bio" placeholder="Bio (max 500 characters)" value={form.bio} onChange={handleChange} maxLength={500} className="w-full border rounded px-3 py-2" />
-                            <input name="profilePicture" placeholder="Profile Picture URL" value={form.profilePicture} onChange={handleChange} className="w-full border rounded px-3 py-2" />
                             {formError && <div className="text-destructive text-sm">{Array.isArray(formError) ? formError.map((err, i) => <div key={i}>{err}</div>) : formError}</div>}
                             <div className="flex justify-end gap-2 mt-2">
                                 <button type="button" className="px-4 py-2 border rounded" onClick={handleEditClose} disabled={formLoading}>Cancel</button>
@@ -154,10 +186,33 @@ export const ProfilePage = () => {
                     {/* Profile Info */}
                     <div className="px-4 pb-4">
                         <div className="flex items-end justify-between -mt-16 mb-4">
-                            <Avatar className="h-32 w-32 border-4 border-background">
-                                <AvatarImage src={user.profilePicture} alt={`${user.firstName} ${user.lastName}`} />
-                                <AvatarFallback className="text-2xl">{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                            <div className="relative">
+                                <Avatar className="h-32 w-32 border-4 border-background">
+                                    <AvatarImage src={user.profilePicture} alt={`${user.firstName} ${user.lastName}`} />
+                                    <AvatarFallback className="text-2xl">{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                {isOwnProfile && (
+                                    <div className="absolute bottom-2 right-2">
+                                        <label className="cursor-pointer">
+                                            <div className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-2 shadow-lg transition-colors">
+                                                <Camera className="h-4 w-4" />
+                                            </div>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleProfilePictureUpload}
+                                                className="hidden"
+                                                disabled={uploadingProfilePicture}
+                                            />
+                                        </label>
+                                        {uploadingProfilePicture && (
+                                            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                                                <div className="text-white text-xs">Uploading...</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                             {isOwnProfile && (
                                 <Button variant="outline" className="mb-4" onClick={handleEditOpen}>
                                     <Edit className="h-4 w-4 mr-2" />
