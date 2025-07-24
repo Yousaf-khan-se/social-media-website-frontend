@@ -45,7 +45,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from '@/lib/utils'
-import { useForm, FormProvider } from 'react-hook-form'
 
 // Constants
 const MAX_FILES = 10

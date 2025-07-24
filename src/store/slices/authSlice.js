@@ -154,6 +154,26 @@ export const unfollowUser = createAsyncThunk(
     }
 )
 
+export const uploadProfilePicture = createAsyncThunk(
+    'auth/uploadProfilePicture',
+    async (profilePicture, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/users/profile-picture', profilePicture, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            })
+            const data = response.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            return data
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
 // Simple initial state for HTTP secure cookies
 const initialState = {
     user: null,
@@ -265,6 +285,20 @@ const authSlice = createSlice({
             .addCase(unfollowUser.fulfilled, (state, action) => {
                 state.isLoading = false
                 state.user = { ...state.user, ...action.payload.user }
+            })
+            // upload profile picture
+            .addCase(uploadProfilePicture.pending, (state) => {
+                state.isLoading = true
+                state.error = null
+            })
+            .addCase(uploadProfilePicture.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.user.profilePicture = action.payload.profilePicture; // url of profile picture
+                state.error = null
+            })
+            .addCase(uploadProfilePicture.rejected, (state, action) => {
+                state.isLoading = false
+                state.error = action.payload
             })
     },
 })
