@@ -207,7 +207,7 @@ export const RegisterPage = () => {
                             to="/login"
                             className="text-primary hover:underline font-medium"
                         >
-                            Sign in
+                            Log in
                         </Link>
                     </div>
                 </CardContent>

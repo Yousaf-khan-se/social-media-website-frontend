@@ -18,46 +18,48 @@ const Messaging = () => {
     const [isConnected, setIsConnected] = useState(false)
     const [showChatWindow, setShowChatWindow] = useState(false)
 
-    useEffect(() => {
-        if (user) {
-            // Fetch chats
-            dispatch(fetchChats())
+    useEffect(
+        () => {
+            if (user) {
+                console.log('User is authenticated, initializing messaging...')
+                // Fetch chats
+                dispatch(fetchChats())
 
-            // Connect to socket
-            const socket = socketService.connect()
+                // Connect to socket
+                const socket = socketService.connect()
 
-            socket.on('connect', () => {
-                setIsConnected(true)
-                console.log('Connected to messaging server')
-            })
+                socket.on('connect', () => {
+                    setIsConnected(true)
+                    console.log('Connected to messaging server')
+                })
 
-            socket.on('disconnect', () => {
-                setIsConnected(false)
-                console.log('Disconnected from messaging server')
-            })
+                socket.on('disconnect', () => {
+                    setIsConnected(false)
+                    console.log('Disconnected from messaging server')
+                })
 
-            socket.on('error', (error) => {
-                console.error('Socket error:', error)
-            })
+                socket.on('error', (error) => {
+                    console.error('Socket error:', error)
+                })
 
-            // Listen for online status events
-            socket.on('userOnline', (data) => {
-                console.log('User came online:', data.user)
-                dispatch(addOnlineUser(data.user))
-            })
+                // Listen for online status events
+                socket.on('userOnline', (data) => {
+                    console.log('User came online:', data.user)
+                    dispatch(addOnlineUser(data.user))
+                })
 
-            socket.on('userOffline', (data) => {
-                console.log('User went offline:', data.user)
-                dispatch(removeOnlineUser(data.user))
-            })
+                socket.on('userOffline', (data) => {
+                    console.log('User went offline:', data.user)
+                    dispatch(removeOnlineUser(data.user))
+                })
 
-            return () => {
-                socket.off('userOnline')
-                socket.off('userOffline')
-                socketService.disconnect()
+                return () => {
+                    socket.off('userOnline')
+                    socket.off('userOffline')
+                    socketService.disconnect()
+                }
             }
-        }
-    }, [user, dispatch])
+        }, [user, dispatch])
 
     useEffect(() => {
         if (activeChat) {

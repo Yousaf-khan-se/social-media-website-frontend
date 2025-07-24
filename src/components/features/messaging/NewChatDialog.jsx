@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { createChat } from '@/store/slices/chatSlice'
-import { fetchAuthUserFollowers, fetchAuthUserFollowings, searchUsers } from '@/store/slices/profileListSlice'
+import { fetchAuthUserFollowers, fetchAuthUserFollowings } from '@/store/slices/profileListSlice'
 import { Search, X, Users, MessageCircle } from 'lucide-react'
 
 const NewChatDialog = ({ isOpen, onClose }) => {
