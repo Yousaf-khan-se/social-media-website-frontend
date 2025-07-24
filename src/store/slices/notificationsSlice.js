@@ -118,37 +118,6 @@ export const unsubscribeFromPushNotifications = createAsyncThunk(
     }
 )
 
-// Notification settings
-export const fetchNotificationSettings = createAsyncThunk(
-    'notifications/fetchNotificationSettings',
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await notificationService.getSettings()
-            if (!response.success) {
-                return rejectWithValue(response)
-            }
-            return response
-        } catch (error) {
-            return rejectWithValue(error.response?.data || { error: error.message })
-        }
-    }
-)
-
-export const updateNotificationSettings = createAsyncThunk(
-    'notifications/updateNotificationSettings',
-    async (settings, { rejectWithValue }) => {
-        try {
-            const response = await notificationService.updateSettings(settings)
-            if (!response.success) {
-                return rejectWithValue(response)
-            }
-            return response
-        } catch (error) {
-            return rejectWithValue(error.response?.data || { error: error.message })
-        }
-    }
-)
-
 const initialState = {
     notifications: [],
     unreadCount: 0,
@@ -156,20 +125,6 @@ const initialState = {
     error: null,
     hasMore: true,
     page: 1,
-    // Settings state
-    settings: {
-        push: true,
-        email: true,
-        inApp: true,
-        likes: true,
-        comments: true,
-        follows: true,
-        messages: true,
-        posts: true,
-        admin: true,
-    },
-    settingsLoading: false,
-    settingsError: null,
     // Push notification state
     pushSupported: false,
     pushEnabled: false,
@@ -294,31 +249,6 @@ const notificationsSlice = createSlice({
                 state.pushEnabled = false
                 state.fcmToken = null
                 state.settings.push = false
-            })
-            // Notification settings
-            .addCase(fetchNotificationSettings.pending, (state) => {
-                state.settingsLoading = true
-                state.settingsError = null
-            })
-            .addCase(fetchNotificationSettings.fulfilled, (state, action) => {
-                state.settingsLoading = false
-                state.settings = { ...state.settings, ...action.payload.notificationSettings }
-            })
-            .addCase(fetchNotificationSettings.rejected, (state, action) => {
-                state.settingsLoading = false
-                state.settingsError = action.payload
-            })
-            .addCase(updateNotificationSettings.pending, (state) => {
-                state.settingsLoading = true
-                state.settingsError = null
-            })
-            .addCase(updateNotificationSettings.fulfilled, (state, action) => {
-                state.settingsLoading = false
-                state.settings = { ...state.settings, ...action.payload.notificationSettings }
-            })
-            .addCase(updateNotificationSettings.rejected, (state, action) => {
-                state.settingsLoading = false
-                state.settingsError = action.payload
             })
     },
 })

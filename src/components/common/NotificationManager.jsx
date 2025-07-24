@@ -3,11 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     addNotification,
     setPushSupport,
-    setPushEnabled,
     setFcmToken,
-    fetchNotificationSettings,
     subscribeToPushNotifications
 } from '@/store/slices/notificationsSlice';
+import { updateNotificationSettings } from '@/store/slices/settingsSlice';
 import notificationService from '@/services/notificationService';
 import { onMessageListener, getStoredToken } from '@/services/firebase-messaging';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +15,7 @@ const NotificationManager = ({ children }) => {
     const dispatch = useDispatch();
     const { toast } = useToast();
     const { user } = useSelector(state => state.auth);
-    const { settings, pushEnabled } = useSelector(state => state.notifications);
+    const { pushNotification } = useSelector(state => state.settings?.settings?.notifications || {});
     const isInitialized = useRef(false);
 
     useEffect(() => {
@@ -33,7 +32,7 @@ const NotificationManager = ({ children }) => {
                     const storedToken = getStoredToken();
                     if (storedToken) {
                         dispatch(setFcmToken(storedToken));
-                        dispatch(setPushEnabled(true));
+                        dispatch(updateNotificationSettings({ pushNotification: true }));
 
                         // Ensure token is registered with backend
                         try {
@@ -47,15 +46,13 @@ const NotificationManager = ({ children }) => {
                             const result = await dispatch(subscribeToPushNotifications()).unwrap();
                             if (result.success) {
                                 dispatch(setFcmToken(result.token));
-                                dispatch(setPushEnabled(true));
+                                dispatch(updateNotificationSettings({ pushNotification: true }));
                             }
                         } catch (error) {
                             console.error('Error subscribing to push notifications:', error);
                         }
                     }
 
-                    // Fetch notification settings
-                    await dispatch(fetchNotificationSettings()).unwrap();
                 }
 
                 isInitialized.current = true;
@@ -68,7 +65,7 @@ const NotificationManager = ({ children }) => {
     }, [user, dispatch]);
 
     useEffect(() => {
-        if (!user || !pushEnabled) return;
+        if (!user || !pushNotification) return;
 
         console.log('🔥 Setting up foreground message listener for user:', user._id);
 
@@ -103,7 +100,7 @@ const NotificationManager = ({ children }) => {
                     }
 
                     // Show toast notification if in-app notifications are enabled
-                    if (settings.inApp) {
+                    if (pushNotification) {
                         toast({
                             title: payload.notification?.title || 'New Notification',
                             description: payload.notification?.body,
@@ -132,7 +129,7 @@ const NotificationManager = ({ children }) => {
         setupListener();
 
         return cleanup;
-    }, [user, pushEnabled, settings.inApp, dispatch, toast]);
+    }, [user, pushNotification, dispatch, toast]);
 
     const handleNotificationClick = (data) => {
         if (!data) return;

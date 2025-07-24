@@ -11,7 +11,6 @@ import {
     Heart,
     MessageCircle,
     UserPlus,
-    Settings,
     Filter,
     MoreVertical,
     Trash2,
@@ -30,12 +29,10 @@ import {
     deleteNotification,
     clearAllNotifications
 } from '@/store/slices/notificationsSlice'
-import NotificationSettings from '@/components/features/notifications/NotificationSettings'
 
 export const NotificationsPage = () => {
     const dispatch = useDispatch()
     const { notifications, isLoading, error, unreadCount, hasMore, page } = useSelector(state => state.notifications || {})
-    const [showSettings, setShowSettings] = useState(false)
     const [filterType, setFilterType] = useState('all')
 
     // Load notifications on mount
@@ -113,24 +110,6 @@ export const NotificationsPage = () => {
         { value: 'message', label: 'Messages', count: notifications?.filter(n => n.type === 'message').length || 0 },
     ]
 
-    if (showSettings) {
-        return (
-            <div className="flex-1 border-r border-border">
-                <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
-                    <div className="flex items-center justify-between px-4 py-3">
-                        <h1 className="text-xl font-semibold">Notification Settings</h1>
-                        <Button variant="ghost" size="sm" onClick={() => setShowSettings(false)}>
-                            Back to Notifications
-                        </Button>
-                    </div>
-                </div>
-                <div className="p-4">
-                    <NotificationSettings />
-                </div>
-            </div>
-        )
-    }
-
     return (
         <div className="flex-1 border-r border-border">
             <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
@@ -150,10 +129,6 @@ export const NotificationsPage = () => {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setShowSettings(true)}>
-                                    <Settings className="h-4 w-4 mr-2" />
-                                    Settings
-                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handleClearAll} className="text-destructive">
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Clear all

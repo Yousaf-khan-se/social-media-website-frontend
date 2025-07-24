@@ -14,6 +14,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { Toaster } from './components/ui/toaster'
 import './App.css'
 import Messaging from './pages/Messaging'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   return (
@@ -62,7 +63,7 @@ function App() {
               />
               <Route path="settings" element={
                 <ProtectedRoute>
-                  <h1 className='text-2xl font-bold text-center pt-20'>Under Development ...</h1>
+                  <SettingsPage />
                 </ProtectedRoute>
               } />
             </Route>
