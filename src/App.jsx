@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { ProtectedRoute } from './components/common/ProtectedRoute'
@@ -15,8 +15,20 @@ import { Toaster } from './components/ui/toaster'
 import './App.css'
 import Messaging from './pages/Messaging'
 import SettingsPage from './pages/SettingsPage'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchSettings } from './store/slices/settingsSlice'
 
 function App() {
+
+  const { isAuthenticated } = useSelector(state => state.auth)
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchSettings());
+    }
+  }, [isAuthenticated, dispatch])
+
   return (
     <Router>
       <NotificationManager>

@@ -38,7 +38,6 @@ import AccessibilitySettings from '@/components/features/settings/AccessibilityS
 import PreferencesSettings from '@/components/features/settings/PreferencesSettings'
 import BlockedContent from '@/components/features/settings/BlockedContent'
 import {
-    fetchSettings,
     exportSettings,
     importSettings,
     resetSettings,
@@ -46,7 +45,8 @@ import {
     clearExportError,
     clearImportError,
     clearUpdateError,
-    clearResetError
+    clearResetError,
+    fetchSettings
 } from '@/store/slices/settingsSlice'
 
 const SETTINGS_SECTIONS = [
@@ -124,10 +124,10 @@ export const SettingsPage = () => {
     const [activeSection, setActiveSection] = useState('privacy')
     const { toast } = useToast()
 
-    // Fetch all settings on mount
     useEffect(() => {
-        dispatch(fetchSettings())
-    }, [dispatch])
+        if (!settings) dispatch(fetchSettings());
+    }, [dispatch, settings]);
+
 
     // Handle errors with toast notifications
     useEffect(() => {
@@ -264,8 +264,8 @@ export const SettingsPage = () => {
                                             key={section.id}
                                             onClick={() => setActiveSection(section.id)}
                                             className={`flex items-center gap-3 p-3 ${activeSection === section.id
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : ''
+                                                ? 'bg-primary/10 text-primary'
+                                                : ''
                                                 }`}
                                         >
                                             <section.icon className="h-4 w-4" />
