@@ -27,8 +27,8 @@ export const ExplorePage = () => {
     } = useSelector(state => state.auth)
 
     const {
-        profiles,
-        isLoadingProfiles,
+        otherProfiles: profiles,
+        isLoadingProfiles: isLoadingProfiles,
         error: ProfileLoadingError
     } = useSelector(state => state.profileList)
 
