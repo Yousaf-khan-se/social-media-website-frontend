@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { fetchChatMessages, addMessage, setTypingUsers, markMessageAsSeen, deleteChat } from '@/store/slices/chatSlice'
@@ -21,9 +20,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { current } from '@reduxjs/toolkit'
 
 const ChatWindow = ({ onBack }) => {
     const dispatch = useDispatch()

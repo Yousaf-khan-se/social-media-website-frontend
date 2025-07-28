@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation } from 'react-router-dom'
-import { fetchChats, clearError, addOnlineUser, removeOnlineUser, fetchChatPermissionRequests } from '@/store/slices/chatSlice'
+import { fetchChats, clearError, addOnlineUser, removeOnlineUser, fetchChatPermissionRequests, setActiveChat } from '@/store/slices/chatSlice'
 import { useAuth } from '@/hooks/useAuth'
 import socketService from '@/services/socketService'
 import ChatList from '@/components/features/messaging/ChatList'
@@ -84,6 +84,7 @@ const Messaging = () => {
 
     const handleBackToList = () => {
         setShowChatWindow(false)
+        dispatch(setActiveChat(null));
     }
 
     const handleNewChat = () => {

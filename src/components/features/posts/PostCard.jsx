@@ -604,7 +604,6 @@ export const PostCard = ({ post }) => {
                                 {Array.isArray(post.comments) && post.comments.length > 0 && (
                                     <div className="space-y-2 max-h-96 overflow-y-auto">
                                         {post.comments.map((comment) => (
-                                            console.log('Rendering comment:', comment),
                                             <CommentCard
                                                 key={comment?._id || comment?.id}
                                                 comment={comment}
