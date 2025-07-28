@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { setActiveChat, setSearchQuery, deleteChat } from '@/store/slices/chatSlice'
-import { Search, Users, MessageCircle, Plus, MoreVertical, Trash2 } from 'lucide-react'
+import { Search, Users, MessageCircle, Plus, MoreVertical, Trash2, Settings } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -22,7 +22,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-const ChatList = ({ onNewChat }) => {
+const ChatList = ({ onNewChat, onPermissionRequests }) => {
     const dispatch = useDispatch()
     const { filteredChats, searchQuery, activeChat, unreadCounts } = useSelector(state => state.chats)
     const { user } = useSelector(state => state.auth)
@@ -116,13 +116,26 @@ const ChatList = ({ onNewChat }) => {
             <div className="p-4 border-b">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold">Chats</h2>
-                    <Button
-                        size="sm"
-                        onClick={onNewChat}
-                        className="h-8 w-8 p-0"
-                    >
-                        <Plus className="h-4 w-4" />
-                    </Button>
+                    <div className="flex space-x-2">
+                        {onPermissionRequests && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={onPermissionRequests}
+                                className="h-8 w-8 p-0"
+                                title="Permission Requests"
+                            >
+                                <Settings className="h-4 w-4" />
+                            </Button>
+                        )}
+                        <Button
+                            size="sm"
+                            onClick={onNewChat}
+                            className="h-8 w-8 p-0"
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Search */}

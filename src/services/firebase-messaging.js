@@ -21,7 +21,7 @@ export const analytics = getAnalytics(app);
 const messaging = getMessaging(app);
 
 // VAPID key for push notifications
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || "BPOlrclvoiNscNmITWyp2AaH48GjcYa8l_HQvqOMQj93yzgnGSHIZoKxGNYMw6OYiwYNXwOceBdPPF2eCmZx3Fw";
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
 // Request FCM token and handle registration
 export const requestForToken = async () => {
@@ -151,86 +151,7 @@ export const handleNotificationClick = (notification) => {
     }
 };
 
-// Test notification (for development)
-export const sendTestNotification = async (title = "Test Notification", body = "This is a test notification") => {
-    try {
-        if (!('Notification' in window)) {
-            console.log('This browser does not support notifications');
-            return;
-        }
-
-        if (Notification.permission === 'granted') {
-            const notification = new Notification(title, {
-                body,
-                icon: '/vite.svg', // You can replace with your app icon
-                badge: '/vite.svg',
-                tag: 'test-notification',
-                requireInteraction: false,
-                silent: false
-            });
-
-            notification.onclick = () => handleNotificationClick(notification);
-
-            // Auto close after 5 seconds
-            setTimeout(() => {
-                notification.close();
-            }, 5000);
-
-        } else {
-            console.log('Notification permission not granted');
-        }
-    } catch (error) {
-        console.error('Error sending test notification:', error);
-    }
-};
-
 export default messaging;
-
-// Debug functions
-export const debugNotificationSetup = async () => {
-    console.log('🔍 === NOTIFICATION DEBUG INFO ===');
-
-    // Check browser support
-    console.log('🌐 Browser support:');
-    console.log('  - Notification API:', 'Notification' in window);
-    console.log('  - Service Worker:', 'serviceWorker' in navigator);
-    console.log('  - Push API:', 'PushManager' in window);
-
-    // Check permissions
-    console.log('🔐 Permissions:');
-    console.log('  - Notification permission:', Notification.permission);
-
-    // Check service worker registration
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.ready;
-            console.log('⚙️ Service Worker:');
-            console.log('  - Registered:', !!registration);
-            console.log('  - Scope:', registration.scope);
-            console.log('  - Active:', !!registration.active);
-
-            // Check if FCM service worker is registered
-            const swUrl = `${window.location.origin}/firebase-messaging-sw.js`;
-            const response = await fetch(swUrl);
-            console.log('🔥 Firebase service worker file:', response.ok ? 'Available' : 'Not found');
-
-        } catch (error) {
-            console.error('❌ Service Worker error:', error);
-        }
-    }
-
-    // Check stored token
-    const storedToken = getStoredToken();
-    console.log('🎫 FCM Token:', storedToken ? 'Present' : 'Not found');
-
-    // Check Firebase config
-    console.log('🔧 Firebase config:');
-    console.log('  - Project ID:', import.meta.env.VITE_FIREBASE_PROJECT_ID);
-    console.log('  - Sender ID:', import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID);
-    console.log('  - VAPID Key:', VAPID_KEY ? 'Present' : 'Missing');
-
-    console.log('🔍 === END DEBUG INFO ===');
-};
 
 // Force service worker registration (for debugging)
 export const forceServiceWorkerRegistration = async () => {

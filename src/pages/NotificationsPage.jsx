@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ import {
 
 export const NotificationsPage = () => {
     const dispatch = useDispatch()
+    const navigate = useNavigate()
     const { notifications, isLoading, error, unreadCount, hasMore, page } = useSelector(state => state.notifications || {})
     const [filterType, setFilterType] = useState('all')
 
@@ -46,6 +48,39 @@ export const NotificationsPage = () => {
 
     const handleMarkAllAsRead = () => {
         dispatch(markAllAsRead())
+    }
+
+    const handleNotificationClick = (notification) => {
+        // Mark as read when clicked
+        if (!notification.read && !notification.isRead) {
+            handleMarkAsRead(notification._id || notification.id)
+        }
+
+        // Navigate based on notification type
+        const { type, postId, chatRoomId, senderId } = notification.data || notification
+
+        switch (type) {
+            case 'message':
+            case 'chat_created':
+            case 'group_created':
+                navigate(chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages')
+                break
+            case 'chat_permission_request':
+                // Navigate to messages page with permission requests view
+                navigate('/messages?view=requests')
+                break
+            case 'like':
+            case 'comment':
+            case 'share':
+                navigate(postId ? `/post/${postId}` : '/notifications')
+                break
+            case 'follow':
+                navigate(senderId ? `/profile/${senderId}` : '/notifications')
+                break
+            default:
+                // For other types, stay on notifications page
+                break
+        }
     }
 
     const handleDeleteNotification = (notificationId) => {
@@ -189,8 +224,9 @@ export const NotificationsPage = () => {
                         filteredNotifications.map((notification) => (
                             <div
                                 key={notification._id || notification.id}
-                                className={`p-4 hover:bg-accent/50 transition-colors ${!notification.read && !notification.isRead ? 'bg-accent/30' : ''
+                                className={`p-4 hover:bg-accent/50 transition-colors cursor-pointer ${!notification.read && !notification.isRead ? 'bg-accent/30' : ''
                                     }`}
+                                onClick={() => handleNotificationClick(notification)}
                             >
                                 <div className="flex items-start space-x-3">
                                     <div className="flex-shrink-0">

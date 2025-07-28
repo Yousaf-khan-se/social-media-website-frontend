@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchChats, clearError, addOnlineUser, removeOnlineUser } from '@/store/slices/chatSlice'
+import { useLocation } from 'react-router-dom'
+import { fetchChats, clearError, addOnlineUser, removeOnlineUser, fetchChatPermissionRequests } from '@/store/slices/chatSlice'
 import { useAuth } from '@/hooks/useAuth'
 import socketService from '@/services/socketService'
 import ChatList from '@/components/features/messaging/ChatList'
 import ChatWindow from '@/components/features/messaging/ChatWindow'
 import NewChatDialog from '@/components/features/messaging/NewChatDialog'
+import ChatPermissionRequestsDialog from '@/components/features/messaging/ChatPermissionRequestsDialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { MessageCircle, Wifi, WifiOff } from 'lucide-react'
 
 const Messaging = () => {
     const dispatch = useDispatch()
+    const location = useLocation()
     const { user } = useAuth()
     const { chats, loading, error, activeChat } = useSelector(state => state.chats)
     const [showNewChat, setShowNewChat] = useState(false)
+    const [showPermissionRequests, setShowPermissionRequests] = useState(false)
     const [isConnected, setIsConnected] = useState(false)
     const [showChatWindow, setShowChatWindow] = useState(false)
 
@@ -67,6 +71,17 @@ const Messaging = () => {
         }
     }, [activeChat])
 
+    // Handle URL parameters for direct navigation to permission requests
+    useEffect(() => {
+        const urlParams = new URLSearchParams(location.search)
+        if (urlParams.get('view') === 'requests') {
+            setShowPermissionRequests(true)
+            // Also ensure permission requests are fetched
+            dispatch(fetchChatPermissionRequests('received'))
+            dispatch(fetchChatPermissionRequests('sent'))
+        }
+    }, [location, dispatch])
+
     const handleBackToList = () => {
         setShowChatWindow(false)
     }
@@ -77,6 +92,14 @@ const Messaging = () => {
 
     const handleCloseNewChat = () => {
         setShowNewChat(false)
+    }
+
+    const handleShowPermissionRequests = () => {
+        setShowPermissionRequests(true)
+    }
+
+    const handleClosePermissionRequests = () => {
+        setShowPermissionRequests(false)
     }
 
     const clearErrorMessage = () => {
@@ -132,7 +155,10 @@ const Messaging = () => {
                 {/* Chat List - Desktop always visible, Mobile conditional */}
                 <div className={`w-full lg:w-[25rem] bg-white border-r ${showChatWindow ? 'hidden lg:block' : 'block'
                     }`}>
-                    <ChatList onNewChat={handleNewChat} />
+                    <ChatList
+                        onNewChat={handleNewChat}
+                        onPermissionRequests={handleShowPermissionRequests}
+                    />
                 </div>
 
                 {/* Chat Window - Desktop always visible, Mobile conditional */}
@@ -171,6 +197,12 @@ const Messaging = () => {
             <NewChatDialog
                 isOpen={showNewChat}
                 onClose={handleCloseNewChat}
+            />
+
+            {/* Chat Permission Requests Dialog */}
+            <ChatPermissionRequestsDialog
+                isOpen={showPermissionRequests}
+                onClose={handleClosePermissionRequests}
             />
         </div>
     )

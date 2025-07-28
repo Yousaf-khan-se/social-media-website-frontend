@@ -20,12 +20,13 @@ export const fetchChats = createAsyncThunk(
 
 export const createChat = createAsyncThunk(
     'chats/createChat',
-    async ({ participants, isGroup, name }, { rejectWithValue }) => {
+    async ({ participants, isGroup, name, message }, { rejectWithValue }) => {
         try {
             const response = await api.post('/chats/create', {
                 participants,
                 isGroup,
-                name
+                name,
+                message
             })
             const data = response.data
             if (!data.success) {
@@ -111,6 +112,42 @@ export const deleteMessage = createAsyncThunk(
     }
 )
 
+// New thunk for fetching chat permission requests
+export const fetchChatPermissionRequests = createAsyncThunk(
+    'chats/fetchChatPermissionRequests',
+    async (type = 'received', { rejectWithValue }) => {
+        try {
+            const response = await api.get(`/chats/permission-requests?type=${type}`)
+            const data = response.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            return { ...data, requestType: type }
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
+// New thunk for responding to permission requests
+export const respondToChatPermissionRequest = createAsyncThunk(
+    'chats/respondToChatPermissionRequest',
+    async ({ requestId, response }, { rejectWithValue }) => {
+        try {
+            const apiResponse = await api.post(`/chats/permission-requests/${requestId}/respond`, {
+                response
+            })
+            const data = apiResponse.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            return data
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
 const initialState = {
     chats: [],
     messages: {},
@@ -120,14 +157,23 @@ const initialState = {
     searchQuery: '',
     filteredChats: [],
     unreadCounts: {},
+    // Permission requests
+    permissionRequests: {
+        received: [],
+        sent: []
+    },
     loading: {
         chats: false,
         messages: false,
         creating: false,
-        uploading: false
+        uploading: false,
+        permissionRequests: false,
+        respondingToRequest: false
     },
     error: null,
-    pagination: {}
+    pagination: {},
+    // Permission request specific states
+    lastPermissionRequestResult: null, // To track if last chat creation required permission
 }
 
 const chatSlice = createSlice({
@@ -239,6 +285,38 @@ const chatSlice = createSlice({
             } else {
                 state.messages = {}
             }
+        },
+        // Permission request reducers
+        addPermissionRequest: (state, action) => {
+            const { request, type } = action.payload
+            if (type === 'received') {
+                state.permissionRequests.received.unshift(request)
+            } else if (type === 'sent') {
+                state.permissionRequests.sent.unshift(request)
+            }
+        },
+        updatePermissionRequest: (state, action) => {
+            const { requestId, updates } = action.payload
+
+            // Update in received requests
+            const receivedIndex = state.permissionRequests.received.findIndex(req => req._id === requestId)
+            if (receivedIndex !== -1) {
+                Object.assign(state.permissionRequests.received[receivedIndex], updates)
+            }
+
+            // Update in sent requests
+            const sentIndex = state.permissionRequests.sent.findIndex(req => req._id === requestId)
+            if (sentIndex !== -1) {
+                Object.assign(state.permissionRequests.sent[sentIndex], updates)
+            }
+        },
+        removePermissionRequest: (state, action) => {
+            const requestId = action.payload
+            state.permissionRequests.received = state.permissionRequests.received.filter(req => req._id !== requestId)
+            state.permissionRequests.sent = state.permissionRequests.sent.filter(req => req._id !== requestId)
+        },
+        clearLastPermissionRequestResult: (state) => {
+            state.lastPermissionRequestResult = null
         }
     },
     extraReducers: (builder) => {
@@ -262,15 +340,40 @@ const chatSlice = createSlice({
             .addCase(createChat.pending, (state) => {
                 state.loading.creating = true
                 state.error = null
+                state.lastPermissionRequestResult = null
             })
             .addCase(createChat.fulfilled, (state, action) => {
                 state.loading.creating = false
-                state.chats.unshift(action.payload.chat)
-                state.filteredChats = state.chats
+
+                // Check if this was a permission request or actual chat creation
+                if (action.payload.requiresPermission) {
+                    // Permission request was sent
+                    state.lastPermissionRequestResult = {
+                        type: 'permission_request',
+                        message: action.payload.message,
+                        permissionRequest: action.payload.permissionRequest
+                    }
+                    // Add to sent permission requests
+                    if (action.payload.permissionRequest) {
+                        state.permissionRequests.sent.unshift(action.payload.permissionRequest)
+                    }
+                } else if (action.payload.chat) {
+                    // Chat was created successfully
+                    state.chats.unshift(action.payload.chat)
+                    state.filteredChats = state.chats
+                    state.lastPermissionRequestResult = {
+                        type: 'chat_created',
+                        chat: action.payload.chat
+                    }
+                }
             })
             .addCase(createChat.rejected, (state, action) => {
                 state.loading.creating = false
                 state.error = action.payload
+                state.lastPermissionRequestResult = {
+                    type: 'error',
+                    error: action.payload
+                }
             })
 
             // Fetch chat messages
@@ -330,6 +433,54 @@ const chatSlice = createSlice({
                     state.messages[roomId] = state.messages[roomId].filter(m => m._id !== messageId)
                 })
             })
+
+            // Fetch permission requests
+            .addCase(fetchChatPermissionRequests.pending, (state) => {
+                state.loading.permissionRequests = true
+                state.error = null
+            })
+            .addCase(fetchChatPermissionRequests.fulfilled, (state, action) => {
+                state.loading.permissionRequests = false
+                const { requests, requestType } = action.payload
+
+                if (requestType === 'received') {
+                    state.permissionRequests.received = requests
+                } else if (requestType === 'sent') {
+                    state.permissionRequests.sent = requests
+                }
+            })
+            .addCase(fetchChatPermissionRequests.rejected, (state, action) => {
+                state.loading.permissionRequests = false
+                state.error = action.payload
+            })
+
+            // Respond to permission request
+            .addCase(respondToChatPermissionRequest.pending, (state) => {
+                state.loading.respondingToRequest = true
+                state.error = null
+            })
+            .addCase(respondToChatPermissionRequest.fulfilled, (state, action) => {
+                state.loading.respondingToRequest = false
+                const { permissionRequest, chatRoom } = action.payload
+
+                // Update the request status in received requests
+                const requestIndex = state.permissionRequests.received.findIndex(
+                    req => req._id === permissionRequest._id
+                )
+                if (requestIndex !== -1) {
+                    state.permissionRequests.received[requestIndex] = permissionRequest
+                }
+
+                // If approved and chat was created, add to chats
+                if (chatRoom && permissionRequest.status === 'approved') {
+                    state.chats.unshift(chatRoom)
+                    state.filteredChats = state.chats
+                }
+            })
+            .addCase(respondToChatPermissionRequest.rejected, (state, action) => {
+                state.loading.respondingToRequest = false
+                state.error = action.payload
+            })
     }
 })
 
@@ -344,7 +495,11 @@ export const {
     markMessageAsSeen,
     updateUnreadCount,
     clearError,
-    clearMessages
+    clearMessages,
+    addPermissionRequest,
+    updatePermissionRequest,
+    removePermissionRequest,
+    clearLastPermissionRequestResult
 } = chatSlice.actions
 
 export default chatSlice.reducer

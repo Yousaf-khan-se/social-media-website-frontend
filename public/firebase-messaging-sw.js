@@ -5,7 +5,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-messaging-compat.js');
 
 // Initialize Firebase with configuration
-// Note: Service workers can't access import.meta.env, so we use the direct config
+// Note: Service workers can't access import.meta.env, so we use hardcoded config
 firebase.initializeApp({
     apiKey: "AIzaSyAK64TS_voOkw2x5MF88_hFgCXrTfXlKsA",
     authDomain: "social-media-app-881bf.firebaseapp.com",

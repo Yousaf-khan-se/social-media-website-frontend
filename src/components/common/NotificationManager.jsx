@@ -99,7 +99,7 @@ const NotificationManager = ({ children }) => {
                         dispatch(addNotification(newNotification));
                     }
 
-                    // Show toast notification if in-app notifications are enabled
+                    // Show toast notification if notifications are enabled
                     if (pushNotification) {
                         toast({
                             title: payload.notification?.title || 'New Notification',
@@ -141,6 +141,10 @@ const NotificationManager = ({ children }) => {
             case 'chat_created':
             case 'group_created':
                 window.location.href = chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages';
+                break;
+            case 'chat_permission_request':
+                // Navigate to messages page with permission requests view
+                window.location.href = '/messages?view=requests';
                 break;
             case 'like':
             case 'comment':
