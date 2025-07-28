@@ -3,12 +3,16 @@ import { useDispatch, useSelector } from 'react-redux'
 import { addComment, deleteComment } from '@/store/slices/postsSlice'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Trash2 } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+import { Trash2, MessageCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { AddCommentReplyForm, CommentReplyCard } from './CommentReplyCard'
 
 export const CommentCard = ({ comment, postId }) => {
     const dispatch = useDispatch()
     const { user } = useSelector(state => state.auth)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showReplies, setShowReplies] = useState(false)
 
     const handleDelete = async () => {
         if (window.confirm('Are you sure you want to delete this comment?')) {
@@ -31,6 +35,17 @@ export const CommentCard = ({ comment, postId }) => {
         if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`
         return `${Math.floor(diffInSeconds / 86400)}d`
     }
+
+    const formatEngagementCount = (count) => {
+        if (count >= 1000000) {
+            return `${(count / 1000000).toFixed(1)}M`
+        } else if (count >= 1000) {
+            return `${(count / 1000).toFixed(1)}K`
+        }
+        return count.toString()
+    }
+
+    const repliesCount = comment.replies?.length || 0
 
     return (
         <div className="flex space-x-3 p-3 border-b border-border">
@@ -59,9 +74,46 @@ export const CommentCard = ({ comment, postId }) => {
                     )}
                 </div>
 
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap mb-2">
                     {comment.content}
                 </p>
+
+                {/* Reply button */}
+                <div className="flex items-center">
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 gap-1 text-muted-foreground hover:text-blue-500"
+                        onClick={() => setShowReplies(!showReplies)}
+                        aria-label="Toggle replies"
+                    >
+                        <MessageCircle className={cn("h-4 w-4", showReplies ? "text-blue-500" : "")} />
+                        {repliesCount > 0 && (
+                            <span className="text-xs">{formatEngagementCount(repliesCount)}</span>
+                        )}
+                        <span className="text-xs ml-1">Reply</span>
+                    </Button>
+                </div>
+
+                {/* Replies Section */}
+                {showReplies && (
+                    <div className="mt-3 space-y-3">
+                        <Separator />
+                        {Array.isArray(comment.replies) && comment.replies.length > 0 && (
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                                {comment.replies.map((reply) => (
+                                    <CommentReplyCard
+                                        key={reply?._id || reply?.id}
+                                        commentReply={reply}
+                                        postId={postId}
+                                        commentId={comment._id || comment.id}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                        <AddCommentReplyForm postId={postId} commentId={comment._id || comment.id} />
+                    </div>
+                )}
             </div>
         </div>
     )

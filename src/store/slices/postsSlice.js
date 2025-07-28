@@ -239,6 +239,39 @@ export const deleteComment = createAsyncThunk(
     }
 )
 
+export const addCommentReply = createAsyncThunk(
+    'posts/addCommentReply',
+    async ({ postId, commentId, commentReply }, { rejectWithValue }) => {
+        try {
+            const response = await api.post(`/posts/${postId}/comments/${commentId}/reply`, commentReply)
+            const data = response.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            return data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
+
+export const deleteCommentReply = createAsyncThunk(
+    'posts/deleteCommentReply',
+    async ({ postId, commentId, replyId }, { rejectWithValue }) => {
+        try {
+            const response = await api.delete(`/posts/${postId}/comments/${commentId}/reply/${replyId}`)
+            const data = response.data
+            if (!data.success) {
+                return rejectWithValue(data)
+            }
+            return { postId, commentId, replyId };
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
 export const getTrendingTopics = createAsyncThunk(
     'posts/getTrendingTopics',
     async (_, { rejectWithValue }) => {
@@ -503,6 +536,38 @@ const postsSlice = createSlice({
                     state.currentPost = updatedPost
                 }
             })
+            // Add comment reply
+            .addCase(addCommentReply.fulfilled, (state, action) => {
+                const updatedPost = action.payload.post || action.payload.data
+                const index = state.posts.findIndex(post => post._id === updatedPost._id || post.id === updatedPost.id)
+                if (index !== -1) {
+                    state.posts[index] = updatedPost
+                }
+                if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
+                    state.currentPost = updatedPost
+                }
+            })
+            // delete comment reply
+            .addCase(deleteCommentReply.fulfilled, (state, action) => {
+                const { postId, commentId, replyId } = action.payload
+                const post = state.posts.find(p => p._id === postId || p.id === postId)
+                if (post && post.comments) {
+                    const comment = post.comments.find(c => c._id === commentId || c.id === commentId)
+                    if (comment && comment.replies) {
+                        comment.replies = comment.replies.filter(reply => reply._id !== replyId && reply.id !== replyId)
+                        post.commentsCount = Math.max((post.commentsCount || 0) - 1, 0)
+                    }
+                }
+                if (state.currentPost && (state.currentPost._id === postId || state.currentPost.id === postId)) {
+                    const comment = state.currentPost.comments.find(c => c._id === commentId || c.id === commentId)
+                    if (comment && comment.replies) {
+                        comment.replies = comment.replies.filter(reply => reply._id !== replyId && reply.id !== replyId)
+                        state.currentPost.commentsCount = Math.max((state.currentPost.commentsCount || 0) - 1, 0)
+                    }
+                }
+            })
+
+
             // Delete comment
             .addCase(deleteComment.fulfilled, (state, action) => {
                 const { postId, commentId } = action.payload
