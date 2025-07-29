@@ -15,10 +15,20 @@ const NotificationManager = ({ children }) => {
     const dispatch = useDispatch();
     const { toast } = useToast();
     const { user } = useSelector(state => state.auth);
-    const { pushNotification } = useSelector(state => state.settings?.settings?.notifications || {});
+    const { pushNotifications } = useSelector(state => state.settings?.settings?.notifications || {});
+    // const authState = useSelector(state => state.auth);
+    // const settingsState = useSelector(state => state.settings);
     const isInitialized = useRef(false);
 
+    // Debug logging
+    // console.log('🔍 NotificationManager render - user:', user ? 'exists' : 'null');
+    // console.log('🔍 NotificationManager render - full auth state:', authState);
+    // console.log('🔍 NotificationManager render - full settings state:', settingsState);
+    // console.log('🔍 NotificationManager render - pushNotifications:', pushNotifications);
+    // console.log('🔍 NotificationManager render - isInitialized.current:', isInitialized.current);
+
     useEffect(() => {
+        console.log('🔄 First useEffect triggered - user:', user ? 'exists' : 'null', 'isInitialized:', isInitialized.current);
         if (!user || isInitialized.current) return;
 
         const initializeNotifications = async () => {
@@ -32,7 +42,7 @@ const NotificationManager = ({ children }) => {
                     const storedToken = getStoredToken();
                     if (storedToken) {
                         dispatch(setFcmToken(storedToken));
-                        dispatch(updateNotificationSettings({ pushNotification: true }));
+                        dispatch(updateNotificationSettings({ pushNotifications: true }));
 
                         // Ensure token is registered with backend
                         try {
@@ -46,7 +56,7 @@ const NotificationManager = ({ children }) => {
                             const result = await dispatch(subscribeToPushNotifications()).unwrap();
                             if (result.success) {
                                 dispatch(setFcmToken(result.token));
-                                dispatch(updateNotificationSettings({ pushNotification: true }));
+                                dispatch(updateNotificationSettings({ pushNotifications: true }));
                             }
                         } catch (error) {
                             console.error('Error subscribing to push notifications:', error);
@@ -65,7 +75,10 @@ const NotificationManager = ({ children }) => {
     }, [user, dispatch]);
 
     useEffect(() => {
-        if (!user || !pushNotification) return;
+        console.log('🔄 Second useEffect triggered - user:', user ? 'exists' : 'null', 'pushNotifications:', pushNotifications);
+
+        // Only run if user is authenticated and push notifications are explicitly enabled
+        if (!user || pushNotifications !== true) return;
 
         console.log('🔥 Setting up foreground message listener for user:', user._id);
 
@@ -100,7 +113,7 @@ const NotificationManager = ({ children }) => {
                     }
 
                     // Show toast notification if notifications are enabled
-                    if (pushNotification) {
+                    if (pushNotifications) {
                         toast({
                             title: payload.notification?.title || 'New Notification',
                             description: payload.notification?.body,
@@ -129,7 +142,7 @@ const NotificationManager = ({ children }) => {
         setupListener();
 
         return cleanup;
-    }, [user, pushNotification, dispatch, toast]);
+    }, [user, pushNotifications, dispatch, toast]);
 
     const handleNotificationClick = (data) => {
         if (!data) return;
