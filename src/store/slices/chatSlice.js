@@ -183,6 +183,9 @@ const chatSlice = createSlice({
         setActiveChat: (state, action) => {
             state.activeChat = action.payload
         },
+        resetFilteredChats: (state) => {
+            state.filteredChats = state.chats;
+        },
         addMessage: (state, action) => {
             const { chatRoom, ...message } = action.payload
             if (!state.messages[chatRoom]) {
@@ -192,9 +195,15 @@ const chatSlice = createSlice({
 
             // Update last message in chat
             const chat = state.chats.find(c => c._id === chatRoom)
+            const filterChat = state.filteredChats.find(c => c._id === chatRoom);
             if (chat) {
                 chat.lastMessage = message
                 chat.updatedAt = message.createdAt
+            }
+
+            if (filterChat) {
+                filterChat.lastMessage = message
+                filterChat.updatedAt = message.createdAt
             }
         },
         updateMessage: (state, action) => {
@@ -486,6 +495,7 @@ const chatSlice = createSlice({
 
 export const {
     setActiveChat,
+    resetFilteredChats,
     addMessage,
     updateMessage,
     addOnlineUser,
