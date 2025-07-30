@@ -258,6 +258,10 @@ const chatSlice = createSlice({
         },
         setSearchQuery: (state, action) => {
             state.searchQuery = action.payload
+            if (state.searchQuery.trim() === '') {
+                state.filteredChats = state.chats
+                return;
+            }
             state.filteredChats = state.chats.filter(chat => {
                 const query = action.payload.toLowerCase()
                 if (chat.isGroup) {
