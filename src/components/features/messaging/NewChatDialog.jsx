@@ -291,9 +291,9 @@ const NewChatDialog = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-md h-[80vh] flex flex-col">
+            <Card className="w-full max-w-sm h-[85vh] flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+                <div className="flex items-center justify-between p-2 border-b flex-shrink-0">
                     <h2 className="text-lg font-semibold">
                         {step === 1 ? 'New Chat' : 'Group Details'}
                     </h2>
@@ -309,7 +309,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                 {step === 1 && (
                     <>
                         {/* Search */}
-                        <div className="p-4 border-b flex-shrink-0">
+                        <div className="p-2 border-b flex-shrink-0">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <Input
@@ -338,7 +338,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
 
                         {/* Selected Users */}
                         {selectedUsers.length > 0 && (
-                            <div className="p-4 border-b flex-shrink-0">
+                            <div className="p-2 border-b flex-shrink-0">
                                 <div className="flex items-center space-x-2 mb-2">
                                     <span className="text-sm font-medium">Selected:</span>
                                     <Badge variant="secondary">
@@ -374,7 +374,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
 
                         {/* Optional Message */}
                         {selectedUsers.length > 0 && (
-                            <div className="p-4 border-b flex-shrink-0">
+                            <div className="p-2 border-b flex-shrink-0">
                                 <label className="block text-sm font-medium mb-2">
                                     Message (Optional)
                                 </label>
@@ -399,7 +399,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                         {/* User List */}
                         <div className="flex-1 min-h-0">
                             <ScrollArea className="h-full">
-                                <div className="p-4 space-y-6">
+                                <div className="p-2 space-y-6">
                                     {/* Search Results */}
                                     {searchQuery.trim() && (
                                         <div>
@@ -457,7 +457,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t flex-shrink-0">
+                        <div className="p-2 border-t flex-shrink-0">
                             <div className="flex justify-between items-center">
                                 <div className="text-sm text-gray-500">
                                     {selectedUsers.length === 1 && (
@@ -488,7 +488,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                     <>
                         {/* Group Details */}
                         <div className="flex-1 min-h-0 overflow-y-auto">
-                            <div className="p-4">
+                            <div className="p-2">
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium mb-2">
@@ -531,7 +531,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t flex-shrink-0">
+                        <div className="p-2 border-t flex-shrink-0">
                             <div className="flex justify-between">
                                 <Button
                                     variant="outline"

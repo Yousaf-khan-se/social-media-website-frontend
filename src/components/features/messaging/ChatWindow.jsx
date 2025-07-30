@@ -31,8 +31,7 @@ const ChatWindow = ({ onBack }) => {
         messages,
         typingUsers,
         loading,
-        pagination,
-        onlineUsers // []
+        pagination // []
     } = useSelector(state => state.chats)
     const { user } = useSelector(state => state.auth)
 

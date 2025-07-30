@@ -17,6 +17,7 @@ import Messaging from './pages/Messaging'
 import SettingsPage from './pages/SettingsPage'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchSettings } from './store/slices/settingsSlice'
+import { fetchNotifications } from './store/slices/notificationsSlice'
 
 function App() {
 
@@ -28,6 +29,11 @@ function App() {
       dispatch(fetchSettings());
     }
   }, [isAuthenticated, dispatch])
+
+  // Load notifications on mount
+  useEffect(() => {
+    dispatch(fetchNotifications({ page: 1, limit: 20 }))
+  }, [dispatch])
 
   return (
     <Router>
