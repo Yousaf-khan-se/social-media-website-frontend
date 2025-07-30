@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { setActiveChat, setSearchQuery, deleteChat } from '@/store/slices/chatSlice'
@@ -277,7 +276,7 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
                                                 </div>
                                             </div>
 
-                                            <p className="text-sm text-gray-600 truncate mt-1">
+                                            <p className="text-sm text-gray-600 truncate mt-1 max-w-72">
                                                 {chat.lastMessage?.sender?._id === user._id || chat.lastMessage?.sender?._id === user.id ? 'You: ' : ''}
                                                 {formatLastMessage(chat.lastMessage)}
                                             </p>
