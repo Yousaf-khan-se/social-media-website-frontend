@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -36,11 +36,6 @@ export const NotificationsPage = () => {
     const navigate = useNavigate()
     const { notifications, isLoading, error, unreadCount, hasMore, page } = useSelector(state => state.notifications || {})
     const [filterType, setFilterType] = useState('all')
-
-    // Load notifications on mount
-    useEffect(() => {
-        dispatch(fetchNotifications({ page: 1, limit: 20 }))
-    }, [dispatch])
 
     const handleMarkAsRead = (notificationId) => {
         dispatch(markAsRead(notificationId))
