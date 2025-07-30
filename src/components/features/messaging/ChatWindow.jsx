@@ -212,11 +212,7 @@ const ChatWindow = ({ onBack }) => {
         }
         else {
             const otherUser = getOtherParticipant(chat)
-            if (otherUser) {
-                const isOnline = onlineUsers.some(onlineUser => onlineUser.id === otherUser._id)
-                return isOnline ? 'Online' : 'Offline'
-            }
-            return 'Unknown'
+            return otherUser.isOnline ? 'Online' : 'Offline';
         }
     }
 

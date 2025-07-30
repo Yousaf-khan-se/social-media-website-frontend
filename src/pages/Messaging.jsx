@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation } from 'react-router-dom'
-import { fetchChats, clearError, addOnlineUser, removeOnlineUser, fetchChatPermissionRequests, setActiveChat } from '@/store/slices/chatSlice'
+import { fetchChats, clearError, updateOnlineUserStatus, fetchChatPermissionRequests, setActiveChat } from '@/store/slices/chatSlice'
 import { useAuth } from '@/hooks/useAuth'
 import socketService from '@/services/socketService'
 import ChatList from '@/components/features/messaging/ChatList'
@@ -49,12 +49,12 @@ const Messaging = () => {
                 // Listen for online status events
                 socket.on('userOnline', (data) => {
                     console.log('User came online:', data.user)
-                    dispatch(addOnlineUser(data.user))
+                    dispatch(updateOnlineUserStatus(data.user))
                 })
 
                 socket.on('userOffline', (data) => {
                     console.log('User went offline:', data.user)
-                    dispatch(removeOnlineUser(data.user))
+                    dispatch(updateOnlineUserStatus(data.user))
                 })
 
                 return () => {

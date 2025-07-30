@@ -152,7 +152,7 @@ const initialState = {
     chats: [],
     messages: {},
     activeChat: null,
-    onlineUsers: [],
+    // onlineUsers: [],
     typingUsers: {},
     searchQuery: '',
     filteredChats: [],
@@ -218,18 +218,20 @@ const chatSlice = createSlice({
                 }
             }
         },
-        addOnlineUser: (state, action) => {
+        updateOnlineUserStatus: (state, action) => {
             const user = action.payload;
-            console.log('Adding online user:', user.id, user.firstName);
-            // Check if user is already in online users list
-            if (!state.onlineUsers.find(u => u.id === user.id)) {
-                state.onlineUsers.push(user);
+            console.log('Updating online user status:', user.id);
+            const targetUser = state.chats.find(chat => {
+                const targetParticipant = chat.participants.find(p => p._id === user.id);
+                if (targetParticipant) {
+                    targetParticipant.isOnline = user.isOnline;
+                }
+                return targetParticipant;
+            });
+
+            if (!targetUser) {
+                console.warn('User not found in chats to update online status:', user.id);
             }
-        },
-        removeOnlineUser: (state, action) => {
-            const user = action.payload;
-            console.log('Removing online user:', user.id, user.firstName);
-            state.onlineUsers = state.onlineUsers.filter(u => u.id !== user.id);
         }
         ,
         setTypingUsers: (state, action) => {
@@ -343,6 +345,8 @@ const chatSlice = createSlice({
                 state.loading.chats = false
                 state.chats = action.payload.chats
                 state.filteredChats = action.payload.chats
+
+                console.log('************Fetched chats:\n', state.chats);
             })
             .addCase(fetchChats.rejected, (state, action) => {
                 state.loading.chats = false
@@ -502,7 +506,7 @@ export const {
     resetFilteredChats,
     addMessage,
     updateMessage,
-    addOnlineUser,
+    updateOnlineUserStatus,
     removeOnlineUser,
     setTypingUsers,
     setSearchQuery,
