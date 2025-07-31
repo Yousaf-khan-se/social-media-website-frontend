@@ -235,28 +235,37 @@ const chatSlice = createSlice({
         }
         ,
         setTypingUsers: (state, action) => {
-            const { roomId, user, isTyping } = action.payload
-            console.log('setTypingUsers action:', { roomId, user, isTyping })
+            const { roomId, userId, isTyping } = action.payload
 
             if (!state.typingUsers[roomId]) {
                 state.typingUsers[roomId] = []
             }
 
             if (isTyping) {
-                // Check if user is already in typing list
-                const existingUserIndex = state.typingUsers[roomId].findIndex(u => u.id === user.id)
-                if (existingUserIndex === -1) {
-                    console.log('Adding user to typing list:', user.firstName)
-                    state.typingUsers[roomId].push(user)
-                } else {
-                    console.log('User already in typing list:', user.firstName)
+                // Check if user ID is already in typing list
+                if (!state.typingUsers[roomId].includes(userId)) {
+                    // Store just the user ID
+                    state.typingUsers[roomId].push(userId)
                 }
             } else {
-                console.log('Removing user from typing list:', user.firstName)
-                state.typingUsers[roomId] = state.typingUsers[roomId].filter(u => u.id !== user.id)
+                // Remove user ID from typing list
+                state.typingUsers[roomId] = state.typingUsers[roomId].filter(id => id !== userId)
             }
-
-            console.log('Updated typing users for room:', roomId, state.typingUsers[roomId])
+        },
+        clearTypingUsers: (state, action) => {
+            const { roomId, userId } = action.payload
+            if (roomId && state.typingUsers[roomId]) {
+                if (userId) {
+                    // Clear specific user ID
+                    state.typingUsers[roomId] = state.typingUsers[roomId].filter(id => id !== userId)
+                } else {
+                    // Clear all typing users for room
+                    state.typingUsers[roomId] = []
+                }
+            } else if (!roomId) {
+                // Clear all typing users
+                state.typingUsers = {}
+            }
         },
         setSearchQuery: (state, action) => {
             state.searchQuery = action.payload
@@ -538,6 +547,7 @@ export const {
     updateOnlineUserStatus,
     removeOnlineUser,
     setTypingUsers,
+    clearTypingUsers,
     setSearchQuery,
     markMessageAsSeen,
     updateUnreadCount,
