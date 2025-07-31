@@ -71,7 +71,7 @@ const ChatWindow = ({ onBack }) => {
 
             typingTimeoutRef.current = setTimeout(() => {
                 setStableTypingUsers([])
-            }, 100) // Short delay to prevent flickering
+            }, 800) // Short delay to prevent flickering
         }
 
         return () => {
