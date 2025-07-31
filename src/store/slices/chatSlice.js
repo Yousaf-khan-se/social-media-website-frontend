@@ -152,7 +152,6 @@ const initialState = {
     chats: [],
     messages: {},
     activeChat: null,
-    // onlineUsers: [],
     typingUsers: {},
     searchQuery: '',
     filteredChats: [],
@@ -187,24 +186,25 @@ const chatSlice = createSlice({
             state.filteredChats = state.chats;
         },
         addMessage: (state, action) => {
-            const { chatRoom, ...message } = action.payload
+            const { chatRoom, ...message } = action.payload;
+
+            // Append message
             if (!state.messages[chatRoom]) {
-                state.messages[chatRoom] = []
+                state.messages[chatRoom] = [];
             }
-            state.messages[chatRoom].push(message)
+            state.messages[chatRoom].push(message);
 
-            // Update last message in chat
-            const chat = state.chats.find(c => c._id === chatRoom)
-            const filterChat = state.filteredChats.find(c => c._id === chatRoom);
-            if (chat) {
-                chat.lastMessage = message
-                chat.updatedAt = message.createdAt
-            }
+            // Helper function to update chat
+            const updateChat = chat => {
+                if (chat._id === chatRoom) {
+                    chat.lastMessage = message;
+                    chat.updatedAt = message.createdAt;
+                }
+            };
 
-            if (filterChat) {
-                filterChat.lastMessage = message
-                filterChat.updatedAt = message.createdAt
-            }
+            // Ensure both original and filtered chats are updated
+            state.chats.forEach(updateChat);
+            state.filteredChats.forEach(updateChat);
         },
         updateMessage: (state, action) => {
             const { chatRoom, messageId, updates } = action.payload

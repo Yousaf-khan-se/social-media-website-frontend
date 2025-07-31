@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { setActiveChat, setSearchQuery, deleteChat } from '@/store/slices/chatSlice'
+import { setActiveChat, setSearchQuery, deleteChat, addMessage, markMessageAsSeen } from '@/store/slices/chatSlice'
 import { Search, Users, MessageCircle, Plus, MoreVertical, Trash2, Settings } from 'lucide-react'
 import {
     AlertDialog,
@@ -20,13 +20,43 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import socketService from '@/services/socketService'
 
 const ChatList = ({ onNewChat, onPermissionRequests }) => {
+    console.log('🔄 ChatList component mounting/re-rendering...')
+
     const dispatch = useDispatch()
     const { filteredChats, searchQuery, activeChat, unreadCounts } = useSelector(state => state.chats)
     const { user } = useSelector(state => state.auth)
     const [activeTab, setActiveTab] = useState('all')
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [filteredByTab, setFilteredByTab] = useState(filteredChats.filter(chat => {
+        if (activeTab === 'all') return true
+        if (activeTab === 'direct') return !chat.isGroup
+        if (activeTab === 'groups') return chat.isGroup
+        return true
+    }))
+
+    console.log('🔄 ChatList state - user:', user ? 'exists' : 'null')
+    console.log('🔄 ChatList state - filteredChats length:', filteredChats.length)
+    console.log('🔄 ChatList state - activeChat:', activeChat)
+
+    useEffect(() => {
+        console.log('🚀 ChatList useEffect #2 (filter by tab) running...')
+        console.log('🚀 Dependencies - filteredChats length:', filteredChats.length, 'activeTab:', activeTab)
+
+        setFilteredByTab(
+            filteredChats.filter(chat => {
+                if (activeTab === 'all') return true
+                if (activeTab === 'direct') return !chat.isGroup
+                if (activeTab === 'groups') return chat.isGroup
+                return true
+            })
+        )
+
+        console.log('🚀 Filtered chats by tab completed')
+    }, [filteredChats, activeTab])
+
 
     const handleChatSelect = (chat) => {
         dispatch(setActiveChat(chat._id))
@@ -46,6 +76,9 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
     }
 
     const formatLastMessage = (message) => {
+
+        console.log('--- Last Message ---', message)
+
         if (!message) return 'No messages yet'
 
         if (message.messageType === 'text') {
@@ -102,12 +135,7 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
         return otherUser ? `${otherUser.firstName?.charAt(0)}${otherUser.lastName?.charAt(0)}` : 'U'
     }
 
-    const filteredByTab = filteredChats.filter(chat => {
-        if (activeTab === 'all') return true
-        if (activeTab === 'direct') return !chat.isGroup
-        if (activeTab === 'groups') return chat.isGroup
-        return true
-    })
+    console.log("Filter", filteredByTab);
 
     return (
         <div className="flex flex-col h-full">

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { fetchChatMessages, addMessage, setTypingUsers, markMessageAsSeen, deleteChat } from '@/store/slices/chatSlice'
+import { fetchChatMessages, setTypingUsers, markMessageAsSeen, deleteChat } from '@/store/slices/chatSlice'
 import { useUnderDevelopment } from '@/hooks/useUnderDevelopment'
 import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
@@ -45,56 +45,39 @@ const ChatWindow = ({ onBack }) => {
     const currentMessages = useMemo(() => messages[activeChat] || [], [messages, activeChat])
     const currentTypingUsers = useMemo(() => typingUsers[activeChat] || [], [typingUsers, activeChat])
 
-    // Debug logging for typing users
-    useEffect(() => {
-        console.log('=== TYPING USERS STATE UPDATE ===')
-        console.log('Full typingUsers state:', typingUsers)
-        console.log('activeChat:', activeChat)
-        console.log('currentTypingUsers for this chat:', currentTypingUsers)
-        console.log('currentTypingUsers length:', currentTypingUsers.length)
-        if (currentTypingUsers.length > 0) {
-            console.log('First typing user:', currentTypingUsers[0])
-        }
-        console.log('current user from auth:', {
-            _id: user._id,
-            id: user.id,
-            username: user.username,
-            firstName: user.firstName
-        })
-        console.log('===========================')
-    }, [currentTypingUsers, user, typingUsers, activeChat])
+    // // Debug logging for typing users
+    // useEffect(() => {
+    //     console.log('=== TYPING USERS STATE UPDATE ===')
+    //     console.log('Full typingUsers state:', typingUsers)
+    //     console.log('activeChat:', activeChat)
+    //     console.log('currentTypingUsers for this chat:', currentTypingUsers)
+    //     console.log('currentTypingUsers length:', currentTypingUsers.length)
+    //     if (currentTypingUsers.length > 0) {
+    //         console.log('First typing user:', currentTypingUsers[0])
+    //     }
+    //     console.log('current user from auth:', {
+    //         _id: user._id,
+    //         id: user.id,
+    //         username: user.username,
+    //         firstName: user.firstName
+    //     })
+    //     console.log('===========================')
+    // }, [currentTypingUsers, user, typingUsers, activeChat])
 
     useEffect(() => {
         if (activeChat) {
             dispatch(fetchChatMessages({ roomId: activeChat }))
-            socketService.joinRoom(activeChat)
-        }
-
-        return () => {
-            if (activeChat) {
-                socketService.leaveRoom(activeChat)
-            }
         }
     }, [activeChat, dispatch])
 
     useEffect(() => {
-        // Socket event listeners
-        const handleReceiveMessage = (message) => {
-            dispatch(addMessage(message))
-
-            // Mark as seen if chat is active
-            if (activeChat === message.chatRoom) {
-                socketService.markAsSeen(message._id)
-                dispatch(markMessageAsSeen({ messageId: message._id, userId: user._id || user.id }))
-            }
-        }
 
         const handleUserTyping = (data) => {
-            console.log('--- TYPING EVENT ---')
-            console.log('Typing user:', data.user.firstName, 'ID:', data.user.id)
-            console.log('Current user:', user.firstName, 'ID:', user._id || user.id)
-            console.log('Is typing:', data.isTyping)
-            console.log('Active chat:', activeChat)
+            // console.log('--- TYPING EVENT ---')
+            // console.log('Typing user:', data.user.firstName, 'ID:', data.user.id)
+            // console.log('Current user:', user.firstName, 'ID:', user._id || user.id)
+            // console.log('Is typing:', data.isTyping)
+            // console.log('Active chat:', activeChat)
 
             // Get the current user's ID - could be _id or id
             const currentUserId = user._id || user.id
@@ -105,7 +88,7 @@ const ChatWindow = ({ onBack }) => {
                 return
             }
 
-            console.log('✅ Dispatching typing event for:', data.user.firstName)
+            // console.log('✅ Dispatching typing event for:', data.user.firstName)
             dispatch(setTypingUsers({
                 roomId: activeChat,
                 user: data.user,
@@ -120,12 +103,13 @@ const ChatWindow = ({ onBack }) => {
             }))
         }
 
-        socketService.on('receiveMessage', handleReceiveMessage)
         socketService.on('userTyping', handleUserTyping)
         socketService.on('messageSeen', handleMessageSeen)
 
+        console.log('Active Chat last message:', activeChat?.lastMessage);
+
+
         return () => {
-            socketService.off('receiveMessage', handleReceiveMessage)
             socketService.off('userTyping', handleUserTyping)
             socketService.off('messageSeen', handleMessageSeen)
         }

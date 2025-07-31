@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation } from 'react-router-dom'
-import { fetchChats, clearError, updateOnlineUserStatus, fetchChatPermissionRequests, setActiveChat } from '@/store/slices/chatSlice'
+import { fetchChats, clearError, updateOnlineUserStatus, fetchChatPermissionRequests, setActiveChat, addMessage, markMessageAsSeen } from '@/store/slices/chatSlice'
 import { useAuth } from '@/hooks/useAuth'
 import socketService from '@/services/socketService'
 import ChatList from '@/components/features/messaging/ChatList'
@@ -13,14 +13,26 @@ import { Card } from '@/components/ui/card'
 import { MessageCircle, Wifi, WifiOff } from 'lucide-react'
 
 const Messaging = () => {
+    console.log('🔄 Messaging component mounting/re-rendering...')
+
     const dispatch = useDispatch()
     const location = useLocation()
     const { user } = useAuth()
     const { chats, loading, error, activeChat } = useSelector(state => state.chats)
+    const sss = useSelector(state => state)
     const [showNewChat, setShowNewChat] = useState(false)
     const [showPermissionRequests, setShowPermissionRequests] = useState(false)
     const [isConnected, setIsConnected] = useState(false)
     const [showChatWindow, setShowChatWindow] = useState(false)
+
+    // Use ref to maintain current activeChat value for socket listener
+    const activeChatRef = useRef(activeChat)
+
+    console.log("sssss", sss)
+    console.log('🔄 Messaging state - user:', user ? 'exists' : 'null')
+    console.log('🔄 Messaging state - chats length:', chats.length)
+    console.log('🔄 Messaging state - loading:', loading)
+    console.log('🔄 Messaging state - activeChat:', activeChat)
 
     useEffect(
         () => {
@@ -65,11 +77,77 @@ const Messaging = () => {
             }
         }, [user, dispatch])
 
+    // Separate effect to join rooms when chats are loaded and socket is connected
+    useEffect(() => {
+        if (chats.length > 0 && isConnected) {
+            console.log('🚀 Joining all chat rooms after chats loaded and connected...')
+            chats.forEach(chat => {
+                console.log('🚀 Joining room:', chat._id)
+                socketService.joinRoom(chat._id)
+            })
+        }
+
+        return () => {
+            chats.forEach(chat => {
+                console.log('🚀 Leaving room:', chat._id)
+                socketService.leaveRoom(chat._id)
+            })
+        }
+    }, [chats, isConnected])
+
     useEffect(() => {
         if (activeChat) {
             setShowChatWindow(true)
         }
     }, [activeChat])
+
+    // Update the ref when activeChat changes
+    useEffect(() => {
+        activeChatRef.current = activeChat
+    }, [activeChat])
+
+    useEffect(() => {
+        console.log('🚀 ChatList useEffect #1 (socket listener) running...')
+        console.log('🚀 Dependencies - dispatch:', !!dispatch, 'user:', user ? 'exists' : 'null')
+
+        if (!user) {
+            console.log('🚀 No user, skipping socket setup')
+            return
+        }
+
+        // Socket event listeners
+        const handleReceiveMessage = (message) => {
+            console.log('📨 Received message in ChatList:', message)
+            console.log('📨 Message chatRoom field:', message.chatRoom)
+            console.log('📨 Current activeChat from ref:', activeChatRef.current)
+
+            dispatch(addMessage(message))
+
+            // Mark as seen if chat is active - use current value from ref
+            if (activeChatRef.current === message.chatRoom) {
+                socketService.markAsSeen(message._id)
+                dispatch(markMessageAsSeen({ messageId: message._id, userId: user._id || user.id }))
+            }
+        }
+
+        // Check if socket is connected, if not wait a bit
+        const setupListener = () => {
+            if (socketService.isConnected()) {
+                console.log('🚀 Socket is connected, setting up listener for receiveMessage...')
+                socketService.on('receiveMessage', handleReceiveMessage)
+            } else {
+                console.log('🚀 Socket not connected yet, retrying in 100ms...')
+                setTimeout(setupListener, 100)
+            }
+        }
+
+        setupListener()
+
+        return () => {
+            console.log('🚀 Cleaning up socket listener for receiveMessage...')
+            socketService.off('receiveMessage', handleReceiveMessage)
+        }
+    }, [dispatch, user])
 
     // Handle URL parameters for direct navigation to permission requests
     useEffect(() => {
