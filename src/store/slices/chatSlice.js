@@ -284,12 +284,41 @@ const chatSlice = createSlice({
                 const message = state.messages[roomId].find(m => m._id === messageId)
                 if (message && !message.seenBy.includes(userId)) {
                     message.seenBy.push(userId)
+
+                    // If this was the last unread message, we might want to update unread count
+                    // For now, we'll let the activeChat change handle the reset
                 }
             })
         },
         updateUnreadCount: (state, action) => {
-            const { roomId, count } = action.payload
-            state.unreadCounts[roomId] = count
+            const { roomId, actionType, count } = action.payload;
+            if (actionType === '++') {
+                if (!state.unreadCounts[roomId]) state.unreadCounts[roomId] = 0;
+                state.unreadCounts[roomId] += 1;
+            }
+            else if (actionType === '--') {
+                if (state.unreadCounts[roomId]) {
+                    state.unreadCounts[roomId] -= 1;
+                }
+
+                if (state.unreadCounts[roomId] <= 0) {
+                    delete state.unreadCounts[roomId];
+                }
+            }
+            else if (actionType === 'reset') {
+                delete state.unreadCounts[roomId];
+            }
+            else if (actionType === 'set') {
+                // For setting a specific count
+                if (count !== undefined && count > 0) {
+                    state.unreadCounts[roomId] = count;
+                } else {
+                    delete state.unreadCounts[roomId];
+                }
+            }
+            else {
+                console.warn('Unknown action for updateUnreadCount:', actionType);
+            }
         },
         clearError: (state) => {
             state.error = null

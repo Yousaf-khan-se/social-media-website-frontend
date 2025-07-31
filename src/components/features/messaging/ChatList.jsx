@@ -229,10 +229,10 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
                                                 <AvatarImage src={getDisplayAvatar(chat)} />
                                                 <AvatarFallback>{getAvatarFallback(chat)}</AvatarFallback>
                                             </Avatar>
-                                            {chat.isGroup && (
-                                                <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                                                    {chat.participants.length}
-                                                </div>
+                                            {unreadCounts[chat._id] > 0 && (
+                                                <Badge className="absolute -bottom-1 -right-1 rounded-full">
+                                                    {unreadCounts[chat._id]}
+                                                </Badge>
                                             )}
                                         </div>
 
@@ -242,11 +242,6 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
                                                     {getDisplayName(chat)}
                                                 </h3>
                                                 <div className="flex items-center space-x-2">
-                                                    {unreadCounts[chat._id] > 0 && (
-                                                        <Badge variant="destructive" className="h-5 min-w-5 text-xs">
-                                                            {unreadCounts[chat._id]}
-                                                        </Badge>
-                                                    )}
                                                     <span className="text-xs text-gray-500">
                                                         {formatTime(chat.updatedAt)}
                                                     </span>

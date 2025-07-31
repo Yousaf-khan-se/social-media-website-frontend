@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation } from 'react-router-dom'
-import { fetchChats, clearError, updateOnlineUserStatus, fetchChatPermissionRequests, setActiveChat, addMessage, markMessageAsSeen } from '@/store/slices/chatSlice'
+import { fetchChats, clearError, updateOnlineUserStatus, fetchChatPermissionRequests, setActiveChat, addMessage, markMessageAsSeen, updateUnreadCount } from '@/store/slices/chatSlice'
 import { useAuth } from '@/hooks/useAuth'
 import socketService from '@/services/socketService'
 import ChatList from '@/components/features/messaging/ChatList'
@@ -104,7 +104,12 @@ const Messaging = () => {
     // Update the ref when activeChat changes
     useEffect(() => {
         activeChatRef.current = activeChat
-    }, [activeChat])
+
+        // Reset unread count when switching to a chat
+        if (activeChat) {
+            dispatch(updateUnreadCount({ roomId: activeChat, actionType: 'reset' }))
+        }
+    }, [activeChat, dispatch])
 
     useEffect(() => {
         console.log('🚀 ChatList useEffect #1 (socket listener) running...')
@@ -127,6 +132,12 @@ const Messaging = () => {
             if (activeChatRef.current === message.chatRoom) {
                 socketService.markAsSeen(message._id)
                 dispatch(markMessageAsSeen({ messageId: message._id, userId: user._id || user.id }))
+            } else {
+                // If message is for inactive chat and not sent by current user, increment unread count
+                const isOwnMessage = message.sender._id === user._id || message.sender._id === user.id
+                if (!isOwnMessage) {
+                    dispatch(updateUnreadCount({ roomId: message.chatRoom, actionType: '++' }))
+                }
             }
         }
 
