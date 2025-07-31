@@ -24,17 +24,32 @@ const MessageInput = ({ roomId }) => {
 
     const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾']
 
+    // Cleanup typing status when component unmounts or roomId changes
     useEffect(() => {
         return () => {
             if (typingTimeoutRef.current) {
                 clearTimeout(typingTimeoutRef.current)
             }
+            if (isTyping && roomId) {
+                socketService.sendTyping(roomId, false)
+            }
         }
-    }, [])
+    }, [roomId, isTyping])
+
+    // Cleanup typing when roomId changes
+    useEffect(() => {
+        if (isTyping) {
+            setIsTyping(false)
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+        }
+    }, [roomId, isTyping])
 
     const handleTyping = () => {
         if (!isTyping) {
             setIsTyping(true)
+            console.log('🟡 Sending typing=true for room:', roomId)
             socketService.sendTyping(roomId, true)
         }
 
@@ -46,6 +61,7 @@ const MessageInput = ({ roomId }) => {
         // Set new timeout
         typingTimeoutRef.current = setTimeout(() => {
             setIsTyping(false)
+            console.log('🟡 Sending typing=false for room:', roomId)
             socketService.sendTyping(roomId, false)
         }, 1000)
     }
@@ -96,6 +112,7 @@ const MessageInput = ({ roomId }) => {
         setMessage('')
         setSelectedFiles([])
         setIsTyping(false)
+        console.log('🟡 Sending typing=false (after message sent) for room:', roomId)
         socketService.sendTyping(roomId, false)
 
         if (textareaRef.current) {

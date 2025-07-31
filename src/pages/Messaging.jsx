@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation } from 'react-router-dom'
-import { fetchChats, clearError, updateOnlineUserStatus, fetchChatPermissionRequests, setActiveChat, addMessage, markMessageAsSeen, updateUnreadCount } from '@/store/slices/chatSlice'
+import { fetchChats, clearError, updateOnlineUserStatus, fetchChatPermissionRequests, setActiveChat, addMessage, markMessageAsSeen, updateUnreadCount, setTypingUsers, clearTypingUsers } from '@/store/slices/chatSlice'
 import { useAuth } from '@/hooks/useAuth'
 import socketService from '@/services/socketService'
 import ChatList from '@/components/features/messaging/ChatList'
@@ -13,13 +13,11 @@ import { Card } from '@/components/ui/card'
 import { MessageCircle, Wifi, WifiOff } from 'lucide-react'
 
 const Messaging = () => {
-    console.log('🔄 Messaging component mounting/re-rendering...')
 
     const dispatch = useDispatch()
     const location = useLocation()
     const { user } = useAuth()
     const { chats, loading, error, activeChat } = useSelector(state => state.chats)
-    const sss = useSelector(state => state)
     const [showNewChat, setShowNewChat] = useState(false)
     const [showPermissionRequests, setShowPermissionRequests] = useState(false)
     const [isConnected, setIsConnected] = useState(false)
@@ -27,12 +25,7 @@ const Messaging = () => {
 
     // Use ref to maintain current activeChat value for socket listener
     const activeChatRef = useRef(activeChat)
-
-    console.log("sssss", sss)
-    console.log('🔄 Messaging state - user:', user ? 'exists' : 'null')
-    console.log('🔄 Messaging state - chats length:', chats.length)
-    console.log('🔄 Messaging state - loading:', loading)
-    console.log('🔄 Messaging state - activeChat:', activeChat)
+    const typingTimeoutsRef = useRef(new Map()) // Track typing timeouts
 
     useEffect(
         () => {
@@ -70,6 +63,10 @@ const Messaging = () => {
                 })
 
                 return () => {
+                    console.log('🧹 Cleaning up main socket listeners')
+                    socket.off('connect')
+                    socket.off('disconnect')
+                    socket.off('error')
                     socket.off('userOnline')
                     socket.off('userOffline')
                     socketService.disconnect()
@@ -77,19 +74,98 @@ const Messaging = () => {
             }
         }, [user, dispatch])
 
+    useEffect(() => {
+        console.log('🎯 Setting up typing event listeners...', { user: user?.firstName })
+        const typingTimeouts = typingTimeoutsRef.current
+
+        const handleUserTyping = (data) => {
+            // Get the current user's ID - could be _id or id
+            const currentUserId = user._id || user.id
+
+            // Don't show typing indicator for current user
+            if (data.user.id === currentUserId) {
+                return
+            }
+
+            dispatch(setTypingUsers({
+                roomId: data.roomId,
+                userId: data.user.id, // Now we only send the ID
+                isTyping: data.isTyping
+            }))
+
+            // If user started typing, set a timeout to automatically clear it
+            if (data.isTyping) {
+                const timeoutKey = `${data.roomId}-${data.user.id}`
+
+                // Clear existing timeout
+                if (typingTimeouts.has(timeoutKey)) {
+                    clearTimeout(typingTimeouts.get(timeoutKey))
+                }
+
+                // Set new timeout to auto-clear typing after 3 seconds
+                const timeoutId = setTimeout(() => {
+                    dispatch(clearTypingUsers({
+                        roomId: data.roomId,
+                        userId: data.user.id
+                    }))
+                    typingTimeouts.delete(timeoutKey)
+                }, 3000)
+
+                typingTimeouts.set(timeoutKey, timeoutId)
+            } else {
+                // User stopped typing, clear the timeout
+                const timeoutKey = `${data.roomId}-${data.user.id}`
+                if (typingTimeouts.has(timeoutKey)) {
+                    clearTimeout(typingTimeouts.get(timeoutKey))
+                    typingTimeouts.delete(timeoutKey)
+                }
+            }
+        }
+
+        const handleMessageSeen = (data) => {
+            dispatch(markMessageAsSeen({
+                messageId: data.messageId,
+                userId: data.user._id || data.user.id
+            }))
+        }
+
+        // Wait for socket to be connected before setting up listeners
+        const setupListeners = () => {
+            if (socketService.isConnected()) {
+                console.log('✅ Socket connected, setting up typing listeners')
+                socketService.on('userTyping', handleUserTyping)
+                socketService.on('messageSeen', handleMessageSeen)
+            } else {
+                console.log('⏳ Socket not connected, waiting...')
+                setTimeout(setupListeners, 100)
+            }
+        }
+
+        setupListeners()
+
+        return () => {
+            console.log('🧹 Cleaning up typing event listeners')
+            socketService.off('userTyping', handleUserTyping)
+            socketService.off('messageSeen', handleMessageSeen)
+
+            // Clear all typing timeouts
+            typingTimeouts.forEach(timeoutId => {
+                clearTimeout(timeoutId)
+            })
+            typingTimeouts.clear()
+        }
+    }, [dispatch, user])
+
     // Separate effect to join rooms when chats are loaded and socket is connected
     useEffect(() => {
         if (chats.length > 0 && isConnected) {
-            console.log('🚀 Joining all chat rooms after chats loaded and connected...')
             chats.forEach(chat => {
-                console.log('🚀 Joining room:', chat._id)
                 socketService.joinRoom(chat._id)
             })
         }
 
         return () => {
             chats.forEach(chat => {
-                console.log('🚀 Leaving room:', chat._id)
                 socketService.leaveRoom(chat._id)
             })
         }
@@ -103,18 +179,35 @@ const Messaging = () => {
 
     // Update the ref when activeChat changes
     useEffect(() => {
+        const previousActiveChat = activeChatRef.current
+        const typingTimeouts = typingTimeoutsRef.current
+
         activeChatRef.current = activeChat
 
         // Reset unread count when switching to a chat
         if (activeChat) {
             dispatch(updateUnreadCount({ roomId: activeChat, actionType: 'reset' }))
         }
+
+        // Clear typing indicators for the previous chat when switching
+        return () => {
+            // Clear typing timeouts for the previous chat
+            if (previousActiveChat) {
+                const keysToDelete = []
+
+                typingTimeouts.forEach((timeoutId, key) => {
+                    if (key.startsWith(`${previousActiveChat}-`)) {
+                        clearTimeout(timeoutId)
+                        keysToDelete.push(key)
+                    }
+                })
+
+                keysToDelete.forEach(key => typingTimeouts.delete(key))
+            }
+        }
     }, [activeChat, dispatch])
 
     useEffect(() => {
-        console.log('🚀 ChatList useEffect #1 (socket listener) running...')
-        console.log('🚀 Dependencies - dispatch:', !!dispatch, 'user:', user ? 'exists' : 'null')
-
         if (!user) {
             console.log('🚀 No user, skipping socket setup')
             return
@@ -122,9 +215,6 @@ const Messaging = () => {
 
         // Socket event listeners
         const handleReceiveMessage = (message) => {
-            console.log('📨 Received message in ChatList:', message)
-            console.log('📨 Message chatRoom field:', message.chatRoom)
-            console.log('📨 Current activeChat from ref:', activeChatRef.current)
 
             dispatch(addMessage(message))
 
@@ -144,7 +234,6 @@ const Messaging = () => {
         // Check if socket is connected, if not wait a bit
         const setupListener = () => {
             if (socketService.isConnected()) {
-                console.log('🚀 Socket is connected, setting up listener for receiveMessage...')
                 socketService.on('receiveMessage', handleReceiveMessage)
             } else {
                 console.log('🚀 Socket not connected yet, retrying in 100ms...')
@@ -155,7 +244,6 @@ const Messaging = () => {
         setupListener()
 
         return () => {
-            console.log('🚀 Cleaning up socket listener for receiveMessage...')
             socketService.off('receiveMessage', handleReceiveMessage)
         }
     }, [dispatch, user])

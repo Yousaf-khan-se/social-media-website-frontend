@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { setActiveChat, setSearchQuery, deleteChat, addMessage, markMessageAsSeen } from '@/store/slices/chatSlice'
+import { setActiveChat, setSearchQuery, deleteChat } from '@/store/slices/chatSlice'
 import { Search, Users, MessageCircle, Plus, MoreVertical, Trash2, Settings } from 'lucide-react'
 import {
     AlertDialog,
@@ -20,10 +20,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import socketService from '@/services/socketService'
 
 const ChatList = ({ onNewChat, onPermissionRequests }) => {
-    console.log('🔄 ChatList component mounting/re-rendering...')
 
     const dispatch = useDispatch()
     const { filteredChats, searchQuery, activeChat, unreadCounts } = useSelector(state => state.chats)
@@ -37,14 +35,7 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
         return true
     }))
 
-    console.log('🔄 ChatList state - user:', user ? 'exists' : 'null')
-    console.log('🔄 ChatList state - filteredChats length:', filteredChats.length)
-    console.log('🔄 ChatList state - activeChat:', activeChat)
-
     useEffect(() => {
-        console.log('🚀 ChatList useEffect #2 (filter by tab) running...')
-        console.log('🚀 Dependencies - filteredChats length:', filteredChats.length, 'activeTab:', activeTab)
-
         setFilteredByTab(
             filteredChats.filter(chat => {
                 if (activeTab === 'all') return true
@@ -54,7 +45,6 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
             })
         )
 
-        console.log('🚀 Filtered chats by tab completed')
     }, [filteredChats, activeTab])
 
 
@@ -76,8 +66,6 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
     }
 
     const formatLastMessage = (message) => {
-
-        console.log('--- Last Message ---', message)
 
         if (!message) return 'No messages yet'
 
@@ -134,8 +122,6 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
         const otherUser = getOtherParticipant(chat)
         return otherUser ? `${otherUser.firstName?.charAt(0)}${otherUser.lastName?.charAt(0)}` : 'U'
     }
-
-    console.log("Filter", filteredByTab);
 
     return (
         <div className="flex flex-col h-full">

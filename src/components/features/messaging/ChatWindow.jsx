@@ -37,13 +37,72 @@ const ChatWindow = ({ onBack }) => {
 
     const [loadingMore, setLoadingMore] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [stableTypingUsers, setStableTypingUsers] = useState([])
+    const [typingUsersData, setTypingUsersData] = useState([])
     const messagesEndRef = useRef(null)
     const messagesContainerRef = useRef(null)
     const lastMessageRef = useRef(null)
+    const typingTimeoutRef = useRef(null)
 
     const currentChat = chats.find(chat => chat._id === activeChat)
     const currentMessages = useMemo(() => messages[activeChat] || [], [messages, activeChat])
-    const currentTypingUsers = useMemo(() => typingUsers[activeChat] || [], [typingUsers, activeChat])
+    const currentTypingUserIds = useMemo(() => typingUsers[activeChat] || [], [typingUsers, activeChat])
+
+    // Stabilize typing users to prevent flickering
+    useEffect(() => {
+        if (currentTypingUserIds.length > 0) {
+            // Someone is typing, show immediately
+            setStableTypingUsers(currentTypingUserIds)
+
+            // Clear any existing timeout
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+
+            // Set timeout to hide after 2 seconds of no updates
+            typingTimeoutRef.current = setTimeout(() => {
+                setStableTypingUsers([])
+            }, 300)
+        } else {
+            // No one is typing, clear immediately after a short delay to prevent flickering
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+
+            typingTimeoutRef.current = setTimeout(() => {
+                setStableTypingUsers([])
+            }, 100) // Short delay to prevent flickering
+        }
+
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+        }
+    }, [currentTypingUserIds])
+
+    // Get actual user data for typing users whenever stableTypingUsers or currentChat changes
+    useEffect(() => {
+        if (stableTypingUsers.length > 0 && currentChat) {
+            const usersData = stableTypingUsers.map(userId =>
+                currentChat.participants.find(p => p._id === userId)
+            ).filter(Boolean) // Remove any undefined values
+
+            setTypingUsersData(usersData)
+        } else {
+            setTypingUsersData([])
+        }
+    }, [stableTypingUsers, currentChat])
+
+    useEffect(() => {
+        if (activeChat) {
+            dispatch(fetchChatMessages({ roomId: activeChat }))
+
+            // Clear typing indicators when switching chats
+            setStableTypingUsers([])
+            setTypingUsersData([])
+        }
+    }, [activeChat, dispatch])
 
     // // Debug logging for typing users
     // useEffect(() => {
@@ -317,29 +376,29 @@ const ChatWindow = ({ onBack }) => {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-
-                    {/* Delete Confirmation Dialog */}
-                    <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Chat</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Are you sure you want to delete this chat? This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleDeleteChat}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                    Delete
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
                 </div>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this chat? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteChat}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Messages */}
             <ScrollArea className="flex-1 p-4" ref={messagesContainerRef}>
@@ -401,24 +460,20 @@ const ChatWindow = ({ onBack }) => {
                         ))}
 
                         {/* Typing indicators */}
-                        {currentTypingUsers.length > 0 && (
+                        {typingUsersData.length > 0 && (
                             <div className="flex items-center space-x-2 mb-4">
                                 <Avatar className="h-6 w-6">
-                                    <AvatarImage src={currentTypingUsers[0].profilePicture} />
+                                    <AvatarImage src={typingUsersData[0]?.profilePicture} />
                                     <AvatarFallback className="text-xs">
-                                        {currentTypingUsers[0].firstName?.charAt(0)}
+                                        {typingUsersData[0]?.firstName?.charAt(0)}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="text-sm text-gray-500">
-                                    {currentTypingUsers.length === 1
-                                        ? `${currentTypingUsers[0].firstName} is typing...`
-                                        : `${currentTypingUsers.length} people are typing...`
+                                    {typingUsersData.length === 1
+                                        ? `${typingUsersData[0]?.firstName} is typing...`
+                                        : `${typingUsersData.length} people are typing...`
                                     }
                                 </div>
-                                {/* Debug info */}
-                                {/* <div className="text-xs text-red-500">
-                                    (Debug: {JSON.stringify(currentTypingUsers.map(u => ({ id: u.id, name: u.firstName })))})
-                                </div> */}
                             </div>
                         )}
 
