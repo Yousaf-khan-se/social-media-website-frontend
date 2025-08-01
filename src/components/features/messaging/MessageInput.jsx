@@ -154,7 +154,7 @@ const MessageInput = ({ roomId }) => {
     }
 
     return (
-        <div className="border-t bg-white p-4 mb-8 md:m-0">
+        <div className="border-t bg-white p-2 mb-8 md:m-0">
             {/* File previews */}
             {selectedFiles.length > 0 && (
                 <div className="mb-4">
@@ -241,7 +241,7 @@ const MessageInput = ({ roomId }) => {
                         onClick={() => fileInputRef.current?.click()}
                         disabled={loading.uploading}
                     >
-                        <Paperclip className="h-4 w-4" />
+                        <Paperclip className="h-2 w-2" />
                     </Button>
 
                     <Button
