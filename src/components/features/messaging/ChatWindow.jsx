@@ -436,7 +436,7 @@ const ChatWindow = ({ onBack }) => {
                                 </div>
 
                                 {dayMessages.map((message, index) => {
-                                    const isOwn = message.sender._id === user._id || message.sender._id === user.id
+                                    const isOwn = message.sender?._id === user?._id || message.sender?._id === user?.id
                                     const showAvatar = !isOwn && (
                                         index === 0 ||
                                         dayMessages[index - 1].sender._id !== message.sender._id
