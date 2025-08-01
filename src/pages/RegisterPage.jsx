@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Navigate, Link } from 'react-router-dom'
+import { Navigate, Link, useNavigate } from 'react-router-dom'
 import { register } from '@/store/slices/authSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,17 +21,20 @@ export const RegisterPage = () => {
         confirmPassword: ''
     })
 
+    const navigate = useNavigate();
+
     if (isAuthenticated) {
-        return <Navigate to="/" replace />
+        navigate('/login', { replace: true });
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         if (formData.password !== formData.confirmPassword) {
             return
         }
-        const { confirmPassword, ...registerData } = formData
-        dispatch(register(registerData))
+        const { ...registerData } = formData
+        await dispatch(register(registerData)).unwrap();
+        navigate('/login', { replace: true });
     }
 
     const handleChange = (e) => {
