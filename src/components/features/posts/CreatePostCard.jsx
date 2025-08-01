@@ -103,8 +103,8 @@ export const CreatePostCard = () => {
                     <form onSubmit={handleSubmit} className="space-y-2">
                         <div className="flex items-start gap-3 sm:gap-4">
                             <Avatar className="h-9 w-9 sm:h-10 sm:w-10 mt-1">
-                                <AvatarImage src={user.avatar} alt={user.name} />
-                                <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                                <AvatarImage src={user.profilePicture} alt={user.name} />
+                                <AvatarFallback>{user.firstName?.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1 flex flex-col gap-2">
                                 <Input
