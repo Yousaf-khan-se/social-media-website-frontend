@@ -223,8 +223,8 @@ const chatSlice = createSlice({
             console.log('Updating online user status:', user.id);
             const targetUser = state.chats.find(chat => {
                 const targetParticipant = chat.participants.find(p => p._id === user.id);
-                if (targetParticipant) {
-                    targetParticipant.isOnline = user.isOnline;
+                if (targetParticipant && targetParticipant?.isOnline) {
+                    targetParticipant.isOnline = user?.isOnline;
                 }
                 return targetParticipant;
             });

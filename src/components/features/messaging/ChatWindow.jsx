@@ -254,7 +254,7 @@ const ChatWindow = ({ onBack }) => {
         }
         else {
             const otherUser = getOtherParticipant(chat)
-            return otherUser.isOnline ? 'Online' : 'Offline';
+            return otherUser?.isOnline ? 'Online' : 'Offline';
         }
     }
 
