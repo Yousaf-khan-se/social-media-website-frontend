@@ -105,7 +105,7 @@ export const Sidebar = () => {
                     {user && (
                         <div className={cn(
                             "flex items-center gap-3",
-                            collapsed ? "justify-center" : "justify-between"
+                            collapsed ? "justify-center flex-col" : "justify-between"
                         )}>
                             <Link
                                 to="/profile"
@@ -115,27 +115,25 @@ export const Sidebar = () => {
                                 )}
                             >
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={user.avatar} alt={user.name} />
-                                    <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={user.profilePicture} alt={user.firstName + ' ' + user.lastName} />
+                                    <AvatarFallback>{user.firstName?.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 {!collapsed && (
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">{user.name}</p>
+                                        <p className="text-sm font-medium truncate">{user.firstName + ' ' + user.lastName}</p>
                                         <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
                                     </div>
                                 )}
                             </Link>
-                            {!collapsed && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={handleLogout}
-                                    title="Logout"
-                                >
-                                    <LogOut className="h-4 w-4" />
-                                </Button>
-                            )}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={handleLogout}
+                                title="Logout"
+                            >
+                                <LogOut className="h-4 w-4" />
+                            </Button>
                         </div>
                     )}
                 </div>
