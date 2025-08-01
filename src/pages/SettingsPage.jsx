@@ -26,7 +26,8 @@ import {
     RotateCcw,
     ChevronLeft,
     ChevronDown,
-    Menu
+    Menu,
+    UserCog
 } from 'lucide-react'
 
 import PrivacySettings from '@/components/features/settings/PrivacySettings'
@@ -37,6 +38,7 @@ import ContentSettings from '@/components/features/settings/ContentSettings'
 import AccessibilitySettings from '@/components/features/settings/AccessibilitySettings'
 import PreferencesSettings from '@/components/features/settings/PreferencesSettings'
 import BlockedContent from '@/components/features/settings/BlockedContent'
+import AccountSettings from '@/components/features/settings/AccountSettings'
 import {
     exportSettings,
     importSettings,
@@ -105,6 +107,13 @@ const SETTINGS_SECTIONS = [
         description: 'Manage blocked users and keywords',
         icon: Shield,
         component: BlockedContent
+    },
+    {
+        id: 'account',
+        title: 'Account Settings',
+        description: 'Manage your account and logout options',
+        icon: UserCog,
+        component: AccountSettings
     }
 ]
 
@@ -240,25 +249,25 @@ export const SettingsPage = () => {
     }
 
     return (
-        <div className="container mx-auto py-6 px-4">
+        <div className="container mx-auto py-5 px-3">
             {/* Mobile Header with Dropdown Navigation */}
-            <div className="lg:hidden mb-6">
+            <div className="lg:hidden mb-3">
                 <Card>
                     <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2">
-                                <SettingsIcon className="h-5 w-5" />
+                            <CardTitle className="flex items-center gap-1">
+                                <SettingsIcon className="h-4 w-4" />
                                 Settings
                             </CardTitle>
                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                        <Menu className="h-4 w-4 mr-2" />
+                                <DropdownMenuTrigger asChild className='p-1 m-0 gap-1'>
+                                    <Button variant="outline" size="sm" className='text-[0.6rem] sm:text-sm'>
+                                        <Menu className="h-1 w-1" />
                                         {currentSection?.title}
-                                        <ChevronDown className="h-4 w-4 ml-2" />
+                                        <ChevronDown className="h-[0.1rem] w-[0.1rem]" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-72">
+                                <DropdownMenuContent align="end" className="z-10 w-64 md:w-80 pb-10 sm:pb-2">
                                     {SETTINGS_SECTIONS.map((section) => (
                                         <DropdownMenuItem
                                             key={section.id}

@@ -64,6 +64,19 @@ export const logout = createAsyncThunk(
     }
 )
 
+// Delete account action
+export const deleteAccount = createAsyncThunk(
+    'auth/deleteAccount',
+    async (_, { rejectWithValue }) => {
+        try {
+            await api.delete('/auth/account')
+            return true
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
 // Forgot password
 export const forgotPassword = createAsyncThunk(
     'auth/forgotPassword',
@@ -273,15 +286,33 @@ const authSlice = createSlice({
                 state.error = null
                 state.initialized = true
             })
+            // Delete account
+            .addCase(deleteAccount.pending, (state) => {
+                state.isLoading = true
+                state.error = null
+            })
+            .addCase(deleteAccount.fulfilled, (state) => {
+                state.user = null
+                state.isAuthenticated = false
+                state.error = null
+                state.initialized = true
+                state.isLoading = false
+            })
+            .addCase(deleteAccount.rejected, (state, action) => {
+                state.isLoading = false
+                state.error = action.payload
+            })
             // Follow user
             .addCase(followUser.fulfilled, (state, action) => {
                 state.isLoading = false
                 state.user = { ...state.user, ...action.payload.user }
+                state.error = null;
             })
             // Unfollow user
             .addCase(unfollowUser.fulfilled, (state, action) => {
                 state.isLoading = false
                 state.user = { ...state.user, ...action.payload.user }
+                state.error = null;
             })
             // upload profile picture
             .addCase(uploadProfilePicture.pending, (state) => {

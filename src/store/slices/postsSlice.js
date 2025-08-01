@@ -476,7 +476,8 @@ const postsSlice = createSlice({
                 state.error = null
             })
             .addCase(createPost.fulfilled, (state) => {
-                state.isLoading = false
+                state.isLoading = false;
+                state.error = null;
                 // const newPost = action.payload.post || action.payload.data
                 // state.posts.unshift(newPost)
             })
@@ -494,6 +495,7 @@ const postsSlice = createSlice({
                 if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
                     state.currentPost = updatedPost
                 }
+                state.error = null;
             })
             // Update post
             .addCase(updatePost.fulfilled, (state, action) => {
@@ -505,6 +507,7 @@ const postsSlice = createSlice({
                 if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
                     state.currentPost = updatedPost
                 }
+                state.error = null;
             })
             // Delete post
             .addCase(deletePost.fulfilled, (state, action) => {
@@ -513,6 +516,7 @@ const postsSlice = createSlice({
                 if (state.currentPost && (state.currentPost._id === postId || state.currentPost.id === postId)) {
                     state.currentPost = null
                 }
+                state.error = null;
             })
             // Toggle like (replaces like/unlike)
             .addCase(toggleLike.fulfilled, (state, action) => {
@@ -524,6 +528,7 @@ const postsSlice = createSlice({
                 if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
                     state.currentPost = updatedPost
                 }
+                state.error = null;
             })
             // Add comment
             .addCase(addComment.fulfilled, (state, action) => {
@@ -535,6 +540,7 @@ const postsSlice = createSlice({
                 if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
                     state.currentPost = updatedPost
                 }
+                state.error = null;
             })
             // Add comment reply
             .addCase(addCommentReply.fulfilled, (state, action) => {
@@ -546,6 +552,7 @@ const postsSlice = createSlice({
                 if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
                     state.currentPost = updatedPost
                 }
+                state.error = null;
             })
             // delete comment reply
             .addCase(deleteCommentReply.fulfilled, (state, action) => {
@@ -565,6 +572,7 @@ const postsSlice = createSlice({
                         state.currentPost.commentsCount = Math.max((state.currentPost.commentsCount || 0) - 1, 0)
                     }
                 }
+                state.error = null;
             })
 
 
@@ -580,14 +588,17 @@ const postsSlice = createSlice({
                     state.currentPost.comments = state.currentPost.comments.filter(comment => comment._id !== commentId && comment.id !== commentId)
                     state.currentPost.commentsCount = Math.max((state.currentPost.commentsCount || 0) - 1, 0)
                 }
+                state.error = null;
             })
             // Get trending topics
             .addCase(getTrendingTopics.pending, (state) => {
                 state.isLoadingTrending = true
+                state.error = null;
             })
             .addCase(getTrendingTopics.fulfilled, (state, action) => {
                 state.isLoadingTrending = false
                 state.trendingTopics = action.payload.topics || action.payload.data || []
+                state.error = null;
             })
             .addCase(getTrendingTopics.rejected, (state) => {
                 state.isLoadingTrending = false
@@ -595,10 +606,12 @@ const postsSlice = createSlice({
             // Get suggested users
             .addCase(getSuggestedUsers.pending, (state) => {
                 state.isLoadingSuggested = true
+                state.error = null;
             })
             .addCase(getSuggestedUsers.fulfilled, (state, action) => {
                 state.isLoadingSuggested = false
                 state.suggestedUsers = action.payload.users || action.payload.data || []
+                state.error = null;
             })
             .addCase(getSuggestedUsers.rejected, (state) => {
                 state.isLoadingSuggested = false
