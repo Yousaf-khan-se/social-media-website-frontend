@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Navigate, Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { register } from '@/store/slices/authSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Hash, Eye, EyeOff } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 export const RegisterPage = () => {
     const dispatch = useDispatch()
@@ -22,6 +23,7 @@ export const RegisterPage = () => {
     })
 
     const navigate = useNavigate();
+    const { toast } = useToast();
 
     if (isAuthenticated) {
         navigate('/login', { replace: true });
@@ -34,6 +36,11 @@ export const RegisterPage = () => {
         }
         const { ...registerData } = formData
         await dispatch(register(registerData)).unwrap();
+        toast({
+            title: "Success!",
+            description: "Your account has been created successfully. Now Please login with your account.",
+            variant: "success"
+        });
         navigate('/login', { replace: true });
     }
 
