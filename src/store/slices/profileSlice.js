@@ -144,6 +144,7 @@ const profileSlice = createSlice({
             .addCase(fetchProfile.fulfilled, (state, action) => {
                 state.isLoading = false
                 state.currentProfile = action.payload
+                state.error = null;
             })
             .addCase(fetchProfile.rejected, (state, action) => {
                 state.isLoading = false
@@ -157,6 +158,7 @@ const profileSlice = createSlice({
             .addCase(updateProfile.fulfilled, (state, action) => {
                 state.isLoading = false
                 state.currentProfile = { ...state.currentProfile, ...action.payload.user }
+                state.error = null;
             })
             .addCase(updateProfile.rejected, (state, action) => {
                 state.isLoading = false
@@ -165,10 +167,12 @@ const profileSlice = createSlice({
             // Fetch followers
             .addCase(fetchFollowers.fulfilled, (state, action) => {
                 state.followers = action.payload
+                state.error = null;
             })
             // Fetch following
             .addCase(fetchFollowing.fulfilled, (state, action) => {
                 state.following = action.payload
+                state.error = null;
             })
 
     },
