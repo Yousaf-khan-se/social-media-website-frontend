@@ -236,10 +236,10 @@ const ChatList = ({ onNewChat, onPermissionRequests }) => {
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                className="z-20 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
-                                                                <MoreVertical className="h-3 w-3" />
+                                                                <MoreVertical className="z-30 h-3 w-3" />
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
