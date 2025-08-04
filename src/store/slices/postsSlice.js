@@ -598,8 +598,9 @@ const postsSlice = createSlice({
                 state.trendingTopics = action.payload.topics || action.payload.data || []
                 state.error = null;
             })
-            .addCase(getTrendingTopics.rejected, (state) => {
+            .addCase(getTrendingTopics.rejected, (state, action) => {
                 state.isLoadingTrending = false
+                state.error = action.payload
             })
             // Get suggested users
             .addCase(getSuggestedUsers.pending, (state) => {
@@ -611,8 +612,9 @@ const postsSlice = createSlice({
                 state.suggestedUsers = action.payload.users || action.payload.data || []
                 state.error = null;
             })
-            .addCase(getSuggestedUsers.rejected, (state) => {
+            .addCase(getSuggestedUsers.rejected, (state, action) => {
                 state.isLoadingSuggested = false
+                state.error = action.payload
             })
     },
 })
