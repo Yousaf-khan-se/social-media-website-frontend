@@ -46,13 +46,21 @@ export const ExplorePage = () => {
             const fetchSuggestedUsers = async () => {
                 dispatch(clearProfiles());
                 dispatch(clearError());
-                await dispatch(getSuggestedUsers()).unwrap();
-                setSuggestedUserList(suggestedUsers);
+                dispatch(getSuggestedUsers());
             };
 
             fetchSuggestedUsers();
         }
-    }, [dispatch, searchQuery, suggestedUsers]);
+    }, [dispatch, searchQuery]);
+
+    useEffect(() => {
+        setSuggestedUserList(suggestedUsers);
+
+        return () => {
+            setSuggestedUserList([]);
+        }
+    }, [suggestedUsers]);
+
 
     useEffect(() => {
         if (!isLoadingProfiles && profiles.length > 0) {
