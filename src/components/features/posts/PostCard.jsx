@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { toggleLike, deletePost, updatePost, uploadPostMedia } from '@/store/slices/postsSlice'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -250,6 +251,7 @@ const MediaUploadDialog = ({
 // Main PostCard Component
 export const PostCard = ({ post }) => {
     const dispatch = useDispatch()
+    const navigate = useNavigate()
     const { user } = useSelector(state => state.auth)
 
     // State management
@@ -322,6 +324,19 @@ export const PostCard = ({ post }) => {
         dispatch(deletePost(post._id || post.id))
         setShowDeleteConfirm(false)
     }, [dispatch, post._id, post.id])
+
+    const handleProfileClick = useCallback(() => {
+        const authorId = post.author?._id || post.author?.id || post.author
+        const userId = user._id || user.id
+
+        if (authorId && userId && authorId.toString() === userId.toString()) {
+            // Navigate to own profile
+            navigate('/profile')
+        } else if (authorId) {
+            // Navigate to user profile
+            navigate(`/user/${authorId}`)
+        }
+    }, [post.author, user, navigate])
 
     const handleFileChange = useCallback((e) => {
         const newFiles = Array.from(e.target.files)
@@ -423,7 +438,10 @@ export const PostCard = ({ post }) => {
         <Card className="rounded-lg my-2 w-full">
             <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                    <Avatar className="h-10 w-10">
+                    <Avatar
+                        className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={handleProfileClick}
+                    >
                         <AvatarImage src={authorInfo.avatar} alt={authorInfo.name} />
                         <AvatarFallback>{authorInfo.initials}</AvatarFallback>
                     </Avatar>
@@ -432,8 +450,16 @@ export const PostCard = ({ post }) => {
                         {/* Header */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-semibold text-sm truncate">{authorInfo.name}</span>
-                                <span className="text-xs text-muted-foreground truncate">
+                                <span
+                                    className="font-semibold text-sm truncate cursor-pointer hover:underline"
+                                    onClick={handleProfileClick}
+                                >
+                                    {authorInfo.name}
+                                </span>
+                                <span
+                                    className="text-xs text-muted-foreground truncate cursor-pointer hover:underline"
+                                    onClick={handleProfileClick}
+                                >
                                     @{authorInfo.username}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
