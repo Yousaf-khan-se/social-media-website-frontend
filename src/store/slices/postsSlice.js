@@ -6,13 +6,10 @@ export const fetchPosts = createAsyncThunk(
     'posts/fetchPosts',
     async (params = {}, { rejectWithValue }) => {
         try {
-            const { page = 1, limit = 10, userId, hashtag, search } = params
+            const { page = 1, limit = 10 } = params
             const queryParams = new URLSearchParams({
                 page: page.toString(),
-                limit: limit.toString(),
-                ...(userId && { userId }),
-                ...(hashtag && { hashtag }),
-                ...(search && { search }),
+                limit: limit.toString()
             })
             const response = await api.get(`/posts/feed?${queryParams}`)
             const data = response.data
