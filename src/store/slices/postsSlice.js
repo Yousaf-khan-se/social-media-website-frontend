@@ -335,6 +335,7 @@ const initialState = {
     isLoadingTrending: false,
     isLoadingSuggested: false,
     limit: 10,
+    visibility: 'public', // default visibility
 }
 
 const postsSlice = createSlice({

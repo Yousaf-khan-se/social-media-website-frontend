@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { useParams } from 'react-router-dom'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Calendar, Edit, Camera } from 'lucide-react'
-import { getUserPosts, getMyPosts, resetPosts } from '@/store/slices/postsSlice'
+import { getMyPosts, resetPosts } from '@/store/slices/postsSlice'
 import { PostCard } from '@/components/features/posts/PostCard'
 import { updateProfile, uploadProfilePicture } from '@/store/slices/authSlice'
 
 export const ProfilePage = () => {
-    const { userId } = useParams()
     const { user, error } = useSelector(state => state.auth)
     const { posts, isLoading: postsLoading } = useSelector(state => state.posts)
     const dispatch = useDispatch()
@@ -28,9 +25,6 @@ export const ProfilePage = () => {
     const [formLoading, setFormLoading] = useState(false)
     const [uploadingProfilePicture, setUploadingProfilePicture] = useState(false)
 
-    // Determine if viewing own profile or another user's profile
-    const isOwnProfile = !userId || userId === user?._id || userId === user?.id
-
     React.useEffect(() => {
         if (user) {
             setForm({
@@ -43,15 +37,11 @@ export const ProfilePage = () => {
         }
     }, [user])
 
-    // Fetch posts when component mounts or userId changes
+    // Fetch posts when component mounts
     useEffect(() => {
         dispatch(resetPosts());
-        if (isOwnProfile) {
-            dispatch(getMyPosts({ page: 1, limit: 10 }))
-        } else if (userId) {
-            dispatch(getUserPosts({ userId, page: 1, limit: 10 }))
-        }
-    }, [dispatch, userId, isOwnProfile])
+        dispatch(getMyPosts({ page: 1, limit: 10 }))
+    }, [dispatch])
 
     const handleEditOpen = () => {
         setEditOpen(true)
@@ -191,34 +181,30 @@ export const ProfilePage = () => {
                                     <AvatarImage src={user.profilePicture} alt={`${user.firstName} ${user.lastName}`} />
                                     <AvatarFallback className="text-2xl">{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                {isOwnProfile && (
-                                    <div className="absolute bottom-2 right-2">
-                                        <label className="cursor-pointer">
-                                            <div className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-2 shadow-lg transition-colors">
-                                                <Camera className="h-4 w-4" />
-                                            </div>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleProfilePictureUpload}
-                                                className="hidden"
-                                                disabled={uploadingProfilePicture}
-                                            />
-                                        </label>
-                                        {uploadingProfilePicture && (
-                                            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                                                <div className="text-white text-xs">Uploading...</div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                <div className="absolute bottom-2 right-2">
+                                    <label className="cursor-pointer">
+                                        <div className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-2 shadow-lg transition-colors">
+                                            <Camera className="h-4 w-4" />
+                                        </div>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleProfilePictureUpload}
+                                            className="hidden"
+                                            disabled={uploadingProfilePicture}
+                                        />
+                                    </label>
+                                    {uploadingProfilePicture && (
+                                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                                            <div className="text-white text-xs">Uploading...</div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            {isOwnProfile && (
-                                <Button variant="outline" className="mb-4" onClick={handleEditOpen}>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit Profile
-                                </Button>
-                            )}
+                            <Button variant="outline" className="mb-4" onClick={handleEditOpen}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit Profile
+                            </Button>
                         </div>
 
                         <div className="space-y-3">
@@ -274,7 +260,7 @@ export const ProfilePage = () => {
                             </div>
                         ) : (
                             <div className="text-center text-muted-foreground py-8">
-                                {isOwnProfile ? "You haven't posted anything yet" : "No posts yet"}
+                                You haven't posted anything yet
                             </div>
                         )}
                     </div>

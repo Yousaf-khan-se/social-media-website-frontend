@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage'
 import { ExplorePage } from './pages/ExplorePage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { UserProfilePage } from './pages/UserProfilePage'
 import { PostPage } from './pages/PostPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { Toaster } from './components/ui/toaster'
@@ -63,9 +64,9 @@ function App() {
                   <ProfilePage />
                 </ProtectedRoute>
               } />
-              <Route path="profile" element={
+              <Route path="user/:userId" element={
                 <ProtectedRoute>
-                  <ProfilePage />
+                  <UserProfilePage />
                 </ProtectedRoute>
               } />
               <Route path="post/:postId" element={

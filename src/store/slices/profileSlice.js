@@ -119,6 +119,7 @@ const initialState = {
     isFollowing: false,
     limit: 10,
     hasMore: false,
+    visibility: 'public', // default visibility
 }
 
 const profileSlice = createSlice({
@@ -142,8 +143,10 @@ const profileSlice = createSlice({
                 state.error = null
             })
             .addCase(fetchProfile.fulfilled, (state, action) => {
+                console.log('fetchProfile fulfilled: ', action.payload)
                 state.isLoading = false
-                state.currentProfile = action.payload
+                state.currentProfile = action.payload.user
+                state.visibility = action.payload.visibility || 'public'
                 state.error = null;
             })
             .addCase(fetchProfile.rejected, (state, action) => {
