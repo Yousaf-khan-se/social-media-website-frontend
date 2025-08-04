@@ -104,25 +104,6 @@ const ChatWindow = ({ onBack }) => {
         }
     }, [activeChat, dispatch])
 
-    // // Debug logging for typing users
-    // useEffect(() => {
-    //     console.log('=== TYPING USERS STATE UPDATE ===')
-    //     console.log('Full typingUsers state:', typingUsers)
-    //     console.log('activeChat:', activeChat)
-    //     console.log('currentTypingUsers for this chat:', currentTypingUsers)
-    //     console.log('currentTypingUsers length:', currentTypingUsers.length)
-    //     if (currentTypingUsers.length > 0) {
-    //         console.log('First typing user:', currentTypingUsers[0])
-    //     }
-    //     console.log('current user from auth:', {
-    //         _id: user._id,
-    //         id: user.id,
-    //         username: user.username,
-    //         firstName: user.firstName
-    //     })
-    //     console.log('===========================')
-    // }, [currentTypingUsers, user, typingUsers, activeChat])
-
     useEffect(() => {
         if (activeChat) {
             dispatch(fetchChatMessages({ roomId: activeChat }))
@@ -188,9 +169,12 @@ const ChatWindow = ({ onBack }) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const messageId = entry.target.dataset.messageId
-                        if (messageId) {
+                        // console.log('Message seen:', messageId)
+                        // console.log('Current messages:', currentMessages)
+                        // console.log('userId: ', user._id)
+                        const owned = currentMessages.find(msg => msg._id === messageId && msg.sender._id === user._id)
+                        if (messageId && !owned) {
                             socketService.markAsSeen(messageId)
-                            dispatch(markMessageAsSeen({ messageId, userId: user._id || user.id }))
                         }
                     }
                 })
