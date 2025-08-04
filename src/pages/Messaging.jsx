@@ -125,7 +125,7 @@ const Messaging = () => {
         const handleMessageSeen = (data) => {
             dispatch(markMessageAsSeen({
                 messageId: data.messageId,
-                userId: data.user._id || data.user.id
+                userId: data.user.id
             }))
         }
 
