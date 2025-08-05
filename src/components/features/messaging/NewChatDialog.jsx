@@ -279,13 +279,13 @@ const NewChatDialog = ({ isOpen, onClose }) => {
 
     // Safety check to prevent rendering with invalid state
     if (!user) {
-        console.log('NewChatDialog: No user found, not rendering')
+        // NewChatDialog: No user found, not rendering
         return null
     }
 
     // Additional safety check for required state
     if (!Array.isArray(followersProfiles) || !Array.isArray(followingProfiles) || !Array.isArray(otherProfiles)) {
-        console.log('NewChatDialog: Invalid profiles state, not rendering')
+        // NewChatDialog: Invalid profiles state, not rendering
         return null
     }
 

@@ -124,7 +124,7 @@ const ChatWindow = ({ onBack }) => {
 
             // Don't show typing indicator for current user
             if (data.user.id === currentUserId) {
-                console.log('❌ Filtering out current user typing event')
+                // Filtering out current user typing event
                 return
             }
 
@@ -146,7 +146,7 @@ const ChatWindow = ({ onBack }) => {
         socketService.on('userTyping', handleUserTyping)
         socketService.on('messageSeen', handleMessageSeen)
 
-        console.log('Active Chat last message:', activeChat?.lastMessage);
+        // Active Chat last message updated
 
 
         return () => {

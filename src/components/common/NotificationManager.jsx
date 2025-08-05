@@ -20,15 +20,8 @@ const NotificationManager = ({ children }) => {
     // const settingsState = useSelector(state => state.settings);
     const isInitialized = useRef(false);
 
-    // Debug logging
-    // // console.log('🔍 NotificationManager render - user:', user ? 'exists' : 'null');
-    // // console.log('🔍 NotificationManager render - full auth state:', authState);
-    // // console.log('🔍 NotificationManager render - full settings state:', settingsState);
-    // // console.log('🔍 NotificationManager render - pushNotifications:', pushNotifications);
-    // // console.log('🔍 NotificationManager render - isInitialized.current:', isInitialized.current);
-
     useEffect(() => {
-        // console.log('🔄 First useEffect triggered - user:', user ? 'exists' : 'null', 'isInitialized:', isInitialized.current);
+
         if (!user || isInitialized.current) return;
 
         const initializeNotifications = async () => {
@@ -75,12 +68,12 @@ const NotificationManager = ({ children }) => {
     }, [user, dispatch]);
 
     useEffect(() => {
-        // console.log('🔄 Second useEffect triggered - user:', user ? 'exists' : 'null', 'pushNotifications:', pushNotifications);
+
 
         // Only run if user is authenticated and push notifications are explicitly enabled
         if (!user || pushNotifications !== true) return;
 
-        // console.log('🔥 Setting up foreground message listener for user:', user._id);
+
 
         // Set up foreground message listener
         let cleanup;
@@ -90,7 +83,7 @@ const NotificationManager = ({ children }) => {
                 const messagePromise = onMessageListener();
 
                 messagePromise.then((payload) => {
-                    // console.log('🔔 New foreground message received:', payload);
+
                     // Add to notification list
                     if (payload.data) {
                         const newNotification = {

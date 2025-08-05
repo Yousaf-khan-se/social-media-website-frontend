@@ -16,13 +16,13 @@ firebase.initializeApp({
     measurementId: "G-40YXDWP7FW"
 });
 
-console.log('Firebase Service Worker initialized');
+// Firebase Service Worker initialized
 
 const messaging = firebase.messaging();
 
 // Handle background messages
 messaging.onBackgroundMessage(function (payload) {
-    console.log('Background Message received:', payload);
+    // Background Message received
 
     const notificationTitle = payload.notification?.title || 'New Notification';
     const notificationOptions = {
@@ -75,7 +75,7 @@ function getNotificationActions(type) {
 
 // Handle notification click
 self.addEventListener('notificationclick', function (event) {
-    console.log('Notification clicked:', event.action);
+    // Notification clicked
 
     event.notification.close();
 
@@ -141,12 +141,12 @@ self.addEventListener('notificationclose', function () {
 
 // Install event
 self.addEventListener('install', function () {
-    console.log('Service Worker installing...');
+    // Service Worker installing...
     self.skipWaiting();
 });
 
 // Activate event
 self.addEventListener('activate', function (event) {
-    console.log('Service Worker activating...');
+    // Service Worker activating...
     event.waitUntil(self.clients.claim());
 });

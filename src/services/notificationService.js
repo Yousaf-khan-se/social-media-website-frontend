@@ -69,7 +69,7 @@ class NotificationService {
             });
 
             if (response.data.success) {
-                console.log('FCM token removed from server successfully');
+                // FCM token removed from server successfully
                 return true;
             }
             return false;

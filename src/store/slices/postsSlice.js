@@ -305,7 +305,7 @@ export const uploadPostMedia = createAsyncThunk(
     'posts/uploadPostMedia',
     async ({ id, media }, { rejectWithValue }) => {
         try {
-            console.log('mediaFiles:', media.getAll('media')) // Debugging line to check files being uploaded
+            // Media files prepared for upload
             const response = await api.put(`/posts/media/${id}`, media,
                 {
                     timeout: 120000, // 2 minutes timeout for media uploads

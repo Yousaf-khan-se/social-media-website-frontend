@@ -220,7 +220,7 @@ const chatSlice = createSlice({
         },
         updateOnlineUserStatus: (state, action) => {
             const user = action.payload;
-            console.log('Updating online user status:', user.id);
+            // Updating online user status
             const targetUser = state.chats.find(chat => {
                 const targetParticipant = chat.participants.find(p => p._id === user.id);
                 if (targetParticipant && targetParticipant?.isOnline) {
@@ -384,7 +384,7 @@ const chatSlice = createSlice({
                 state.chats = action.payload.chats
                 state.filteredChats = action.payload.chats
 
-                console.log('************Fetched chats:\n', state.chats);
+                // Chats fetched successfully
             })
             .addCase(fetchChats.rejected, (state, action) => {
                 state.loading.chats = false
