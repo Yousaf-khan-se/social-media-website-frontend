@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { fetchChatMessages, setTypingUsers, markMessageAsSeen, deleteChat } from '@/store/slices/chatSlice'
+import { fetchChatMessages, setTypingUsers, markMessageAsSeen, deleteChat, updateMessage, removeMessage } from '@/store/slices/chatSlice'
 import { useUnderDevelopment } from '@/hooks/useUnderDevelopment'
 import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
@@ -143,15 +143,39 @@ const ChatWindow = ({ onBack }) => {
             }))
         }
 
+        const handleMessageDeleted = (data) => {
+            const { messageId, deletedBy, messageUpdate, isCompletelyDeleted } = data
+
+            if (isCompletelyDeleted) {
+                // Remove message completely from state
+                dispatch(removeMessage({ messageId }))
+            } else if (messageUpdate) {
+                // Update message content (sender deletion - "deleted by owner")
+                dispatch(updateMessage({
+                    chatRoom: activeChat,
+                    messageId,
+                    updates: messageUpdate
+                }))
+            } else {
+                // Soft delete - hide message for specific user
+                dispatch(updateMessage({
+                    chatRoom: activeChat,
+                    messageId,
+                    updates: {
+                        deletedFor: [...(data.deletedFor || []), deletedBy]
+                    }
+                }))
+            }
+        }
+
         socketService.on('userTyping', handleUserTyping)
         socketService.on('messageSeen', handleMessageSeen)
-
-        // Active Chat last message updated
-
+        socketService.on('messageDeleted', handleMessageDeleted)
 
         return () => {
             socketService.off('userTyping', handleUserTyping)
             socketService.off('messageSeen', handleMessageSeen)
+            socketService.off('messageDeleted', handleMessageDeleted)
         }
     }, [activeChat, dispatch, user])
 
@@ -420,7 +444,7 @@ const ChatWindow = ({ onBack }) => {
                                 </div>
 
                                 {dayMessages.map((message, index) => {
-                                    const isOwn = message.sender?._id === user?._id || message.sender?._id === user?.id
+                                    const isOwn = (message.sender?._id || message.sender) === user?._id || (message.sender?._id || message.sender) === user?.id
                                     const showAvatar = !isOwn && (
                                         index === 0 ||
                                         dayMessages[index - 1].sender._id !== message.sender._id
