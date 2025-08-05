@@ -27,6 +27,7 @@ import {
     Trash2,
     TestTube
 } from 'lucide-react';
+import { duration } from 'zod/v4/classic/iso.cjs';
 
 const NotificationSettings = () => {
     const dispatch = useDispatch();
@@ -64,13 +65,15 @@ const NotificationSettings = () => {
             toast({
                 title: "Settings saved",
                 description: "Your notification preferences have been updated",
-                icon: <CheckCircle className="h-4 w-4" />
+                icon: <CheckCircle className="h-4 w-4" />,
+                duration: 5000
             });
         } catch (error) {
             toast({
                 title: "Error",
                 description: error?.message || "Failed to save settings",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             });
         } finally {
             setIsSaving(false);
@@ -82,7 +85,8 @@ const NotificationSettings = () => {
             toast({
                 title: "Not supported",
                 description: "Push notifications are not supported in this browser",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             });
             return;
         }
@@ -92,13 +96,15 @@ const NotificationSettings = () => {
             toast({
                 title: "Push notifications enabled",
                 description: "You'll now receive push notifications",
-                variant: "default"
+                variant: "default",
+                duration: 5000
             });
         } catch (error) {
             toast({
                 title: "Error",
                 description: error?.message || "Failed to enable push notifications",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             });
         }
     };
@@ -109,13 +115,15 @@ const NotificationSettings = () => {
             toast({
                 title: "Push notifications disabled",
                 description: "You'll no longer receive push notifications",
-                variant: "default"
+                variant: "default",
+                duration: 5000
             });
         } catch (error) {
             toast({
                 title: "Error",
                 description: error?.message || "Failed to disable push notifications",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             });
         }
     };

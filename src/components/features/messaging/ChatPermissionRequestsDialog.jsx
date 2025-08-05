@@ -11,6 +11,7 @@ import {
 } from '@/store/slices/chatSlice'
 import { Check, X, Clock, MessageSquare, Users } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { duration } from 'zod/v4/classic/iso.cjs'
 
 const ChatPermissionRequestsDialog = ({ isOpen, onClose }) => {
     const dispatch = useDispatch()
@@ -40,13 +41,15 @@ const ChatPermissionRequestsDialog = ({ isOpen, onClose }) => {
             toast({
                 title: "Request Approved",
                 description: "Chat has been created successfully!",
+                duration: 5000,
             })
         } catch (err) {
             console.error('Failed to approve request:', err)
             toast({
                 title: "Error",
                 description: "Failed to approve request",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000,
             })
         }
     }
@@ -61,13 +64,15 @@ const ChatPermissionRequestsDialog = ({ isOpen, onClose }) => {
             toast({
                 title: "Request Denied",
                 description: "The request has been declined.",
+                duration: 5000,
             })
         } catch (err) {
             console.error('Failed to deny request:', err)
             toast({
                 title: "Error",
                 description: "Failed to deny request",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
         }
     }
