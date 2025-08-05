@@ -9,6 +9,7 @@ import { Label } from '../../ui/label'
 import { LogOut, Trash2, User } from 'lucide-react'
 import { logout, deleteAccount } from '../../../store/slices/authSlice'
 import { useToast } from '../../../hooks/use-toast'
+import { duration } from 'zod/v4/classic/iso.cjs'
 
 const AccountSettings = () => {
     const dispatch = useDispatch()
@@ -27,7 +28,8 @@ const AccountSettings = () => {
 
             toast({
                 title: "Logged out successfully",
-                description: "You have been securely logged out."
+                description: "You have been securely logged out.",
+                duration: 5000
             })
 
             navigate('/login')
@@ -35,7 +37,8 @@ const AccountSettings = () => {
             toast({
                 title: "Logout failed",
                 description: "There was an error logging out. Please try again.",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
         } finally {
             setIsLoggingOut(false)
@@ -47,7 +50,8 @@ const AccountSettings = () => {
             toast({
                 title: "Confirmation required",
                 description: "Please type 'DELETE' to confirm account deletion.",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             return
         }
@@ -60,7 +64,8 @@ const AccountSettings = () => {
 
             toast({
                 title: "Account deleted",
-                description: "Your account has been permanently deleted."
+                description: "Your account has been permanently deleted.",
+                duration: 5000
             })
 
             // Redirect to register page
@@ -69,7 +74,8 @@ const AccountSettings = () => {
             toast({
                 title: "Delete account failed",
                 description: error.error || "Failed to delete account. Please try again.",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
         } finally {
             setIsDeletingAccount(false)

@@ -14,6 +14,7 @@ import { deleteMessage } from '@/store/slices/chatSlice'
 import { useUnderDevelopment } from '@/hooks/useUnderDevelopment'
 import { useLongPress } from '@/hooks/useLongPress'
 import { useToast } from '@/hooks/use-toast'
+import { duration } from 'zod/v4/classic/iso.cjs'
 // import socketService from '@/services/socketService'
 
 const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
@@ -48,7 +49,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
             toast({
                 title: 'Error',
                 description: 'Failed to delete message. Please try again.',
-                variant: 'destructive'
+                variant: 'destructive',
+                duration: 4000,
             })
         }
     }
@@ -121,7 +123,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
             toast({
                 title: 'Download Complete',
                 description: `${finalFilename} has been downloaded successfully.`,
-                icon: <Download className="h-4 w-4" />
+                icon: <Download className="h-4 w-4" />,
+                duration: 4000,
             })
         } catch (error) {
             console.error('Download failed:', error)
@@ -132,14 +135,16 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                 toast({
                     title: 'Download Started',
                     description: 'File opened in new tab for download.',
-                    icon: <Download className="h-4 w-4" />
+                    icon: <Download className="h-4 w-4" />,
+                    duration: 4000,
                 })
             } catch (fallbackError) {
                 console.error('Fallback download also failed:', fallbackError)
                 toast({
                     title: 'Download Failed',
                     description: 'Failed to download the file. Please try again or contact support.',
-                    variant: 'destructive'
+                    variant: 'destructive',
+                    duration: 4000,
                 })
             }
         } finally {
@@ -155,7 +160,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                 toast({
                     title: 'Clipboard',
                     description: 'Message copied to clipboard.',
-                    icon: <Copy className="h-4 w-4" />
+                    icon: <Copy className="h-4 w-4" />,
+                    duration: 4000
                 })
             } else if (message.messageType === 'image') {
                 try {
@@ -181,7 +187,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                         toast({
                             title: 'Clipboard',
                             description: 'Image copied to clipboard.',
-                            icon: <Copy className="h-4 w-4" />
+                            icon: <Copy className="h-4 w-4" />,
+                            duration: 4000
                         })
                     } else {
                         // Fallback: copy image URL
@@ -189,7 +196,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                         toast({
                             title: 'Clipboard',
                             description: 'Image URL copied to clipboard.',
-                            icon: <Copy className="h-4 w-4" />
+                            icon: <Copy className="h-4 w-4" />,
+                            duration: 4000
                         })
                     }
                 } catch (error) {
@@ -197,7 +205,9 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                     toast({
                         title: 'Clipboard',
                         description: 'Failed to copy image to clipboard.',
-                        icon: <Copy className="h-4 w-4" />
+                        icon: <Copy className="h-4 w-4" />,
+                        variant: 'destructive',
+                        duration: 4000
                     })
                 }
             } else if (message.messageType === 'video') {
@@ -206,7 +216,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                 toast({
                     title: 'Clipboard',
                     description: 'Video URL copied to clipboard.',
-                    icon: <Copy className="h-4 w-4" />
+                    icon: <Copy className="h-4 w-4" />,
+                    duration: 4000
                 })
             }
         } catch (error) {
@@ -218,14 +229,16 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                 toast({
                     title: 'Clipboard',
                     description: 'Content URL copied to clipboard.',
-                    icon: <Copy className="h-4 w-4" />
+                    icon: <Copy className="h-4 w-4" />,
+                    duration: 4000
                 })
             } catch (fallbackError) {
                 console.error('Fallback copy also failed:', fallbackError)
                 toast({
                     title: 'Copy Failed',
                     description: 'Failed to copy to clipboard. Please try again.',
-                    variant: 'destructive'
+                    variant: 'destructive',
+                    duration: 4000
                 })
             }
         } finally {

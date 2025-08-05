@@ -73,7 +73,8 @@ export const UserProfilePage = () => {
                 setFollowersCount(prev => prev + 1)
                 toast({
                     title: "Following",
-                    description: `You are now following ${currentProfile.firstName} ${currentProfile.lastName}`
+                    description: `You are now following ${currentProfile.firstName} ${currentProfile.lastName}`,
+                    duration: 5000
                 })
             }
         } catch (error) {

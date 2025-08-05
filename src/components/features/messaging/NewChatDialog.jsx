@@ -10,6 +10,7 @@ import { createChat, clearLastPermissionRequestResult } from '@/store/slices/cha
 import { fetchAuthUserFollowers, fetchAuthUserFollowings, searchUsers, clearProfiles } from '@/store/slices/profileListSlice'
 import { Search, X, Users, MessageCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { duration } from 'zod/v4/classic/iso.cjs'
 
 const NewChatDialog = ({ isOpen, onClose }) => {
     const dispatch = useDispatch()
@@ -130,6 +131,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                     toast({
                         title: "Permission Request Sent",
                         description: lastPermissionRequestResult.message || "The user will be notified of your chat request.",
+                        duration: 5000,
                     })
                     // Close dialog after sending permission request
                     handleClose()
@@ -138,6 +140,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                     toast({
                         title: "Chat Created",
                         description: "You can now start messaging!",
+                        duration: 5000,
                     })
                     // Navigate to chat or close dialog
                     handleClose()
@@ -147,13 +150,15 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                         toast({
                             title: "Cannot Send Message",
                             description: "This user doesn't accept messages from anyone.",
-                            variant: "destructive"
+                            variant: "destructive",
+                            duration: 5000
                         })
                     } else {
                         toast({
                             title: "Error",
                             description: lastPermissionRequestResult.error?.error || "Failed to create chat",
-                            variant: "destructive"
+                            variant: "destructive",
+                            duration: 5000
                         })
                     }
                     break
@@ -252,7 +257,8 @@ const NewChatDialog = ({ isOpen, onClose }) => {
             toast({
                 title: "Group Name Required",
                 description: "Please enter a group name.",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             return
         }

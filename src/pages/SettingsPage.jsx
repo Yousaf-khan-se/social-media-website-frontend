@@ -144,7 +144,8 @@ export const SettingsPage = () => {
             toast({
                 title: "Error",
                 description: error.message || "Failed to load settings. Please try again.",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             dispatch(clearError())
         }
@@ -155,7 +156,8 @@ export const SettingsPage = () => {
             toast({
                 title: "Export Failed",
                 description: exportError.message || "Failed to export settings. Please try again.",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             dispatch(clearExportError())
         }
@@ -166,7 +168,8 @@ export const SettingsPage = () => {
             toast({
                 title: "Import Failed",
                 description: importError.message || "Failed to import settings. Please check the file format.",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             dispatch(clearImportError())
         }
@@ -177,7 +180,8 @@ export const SettingsPage = () => {
             toast({
                 title: "Error",
                 description: updateError.message || "Failed to update settings. Please try again.",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             dispatch(clearUpdateError())
         }
@@ -188,7 +192,8 @@ export const SettingsPage = () => {
             toast({
                 title: "Reset Failed",
                 description: resetError.message || "Failed to reset settings. Please try again.",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             dispatch(clearResetError())
         }
@@ -199,7 +204,8 @@ export const SettingsPage = () => {
         if (exportSettings.fulfilled.match(result)) {
             toast({
                 title: "Settings Exported",
-                description: "Your settings have been downloaded as a backup file."
+                description: "Your settings have been downloaded as a backup file.",
+                duration: 5000
             })
         }
     }
@@ -209,7 +215,8 @@ export const SettingsPage = () => {
         if (importSettings.fulfilled.match(result)) {
             toast({
                 title: "Settings Imported",
-                description: "Your settings have been restored from the backup file."
+                description: "Your settings have been restored from the backup file.",
+                duration: 5000
             })
         }
     }
@@ -219,7 +226,8 @@ export const SettingsPage = () => {
         if (resetSettings.fulfilled.match(result)) {
             toast({
                 title: "Settings Reset",
-                description: `${section.charAt(0).toUpperCase() + section.slice(1)} settings have been reset to defaults.`
+                description: `${section.charAt(0).toUpperCase() + section.slice(1)} settings have been reset to defaults.`,
+                duration: 5000
             })
         }
     }
@@ -229,7 +237,8 @@ export const SettingsPage = () => {
         if (resetSettings.fulfilled.match(result)) {
             toast({
                 title: "All Settings Reset",
-                description: "All settings have been reset to their default values."
+                description: "All settings have been reset to their default values.",
+                duration: 5000
             })
         }
     }

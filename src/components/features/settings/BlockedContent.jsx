@@ -25,6 +25,7 @@ import {
     updateContentSettings,
     clearBlockedError
 } from '@/store/slices/settingsSlice'
+import { duration } from 'zod/v4/classic/iso.cjs'
 
 const BlockedContent = () => {
     const dispatch = useDispatch()
@@ -49,7 +50,8 @@ const BlockedContent = () => {
             toast({
                 title: "Error",
                 description: blockedError,
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             dispatch(clearBlockedError())
         }
@@ -61,13 +63,15 @@ const BlockedContent = () => {
             await dispatch(unblockUser(userId)).unwrap()
             toast({
                 title: "Success",
-                description: "User unblocked successfully"
+                description: "User unblocked successfully",
+                duration: 5000
             })
         } catch (error) {
             toast({
                 title: "Error",
                 description: error || "Failed to unblock user",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
         } finally {
             setSaving(false)
@@ -83,13 +87,15 @@ const BlockedContent = () => {
             setNewKeyword('')
             toast({
                 title: "Success",
-                description: "Keyword blocked successfully"
+                description: "Keyword blocked successfully",
+                duration: 5000
             })
         } catch (error) {
             toast({
                 title: "Error",
                 description: error || "Failed to block keyword",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
         } finally {
             setSaving(false)
@@ -102,13 +108,15 @@ const BlockedContent = () => {
             await dispatch(removeBlockedKeyword(keyword)).unwrap()
             toast({
                 title: "Success",
-                description: "Keyword unblocked successfully"
+                description: "Keyword unblocked successfully",
+                duration: 5000
             })
         } catch (error) {
             toast({
                 title: "Error",
                 description: error || "Failed to unblock keyword",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
         } finally {
             setSaving(false)
@@ -387,13 +395,15 @@ const BlockedContent = () => {
                                         }
                                         toast({
                                             title: "Success",
-                                            description: "All users unblocked"
+                                            description: "All users unblocked",
+                                            duration: 5000
                                         })
                                     } catch {
                                         toast({
                                             title: "Error",
                                             description: "Failed to unblock some users",
-                                            variant: "destructive"
+                                            variant: "destructive",
+                                            duration: 5000
                                         })
                                     } finally {
                                         setSaving(false)
@@ -417,13 +427,15 @@ const BlockedContent = () => {
                                         }
                                         toast({
                                             title: "Success",
-                                            description: "All keywords removed"
+                                            description: "All keywords removed",
+                                            duration: 5000
                                         })
                                     } catch {
                                         toast({
                                             title: "Error",
                                             description: "Failed to remove some keywords",
-                                            variant: "destructive"
+                                            variant: "destructive",
+                                            duration: 5000
                                         })
                                     } finally {
                                         setSaving(false)

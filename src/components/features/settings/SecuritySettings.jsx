@@ -48,7 +48,8 @@ const SecuritySettings = () => {
             toast({
                 title: "Error",
                 description: securityError.message || securityError.error || "A security error occurred",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             dispatch(clearSecurityError())
         }
@@ -71,7 +72,8 @@ const SecuritySettings = () => {
             toast({
                 title: "Error",
                 description: "New passwords don't match",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             return
         }
@@ -80,7 +82,8 @@ const SecuritySettings = () => {
             toast({
                 title: "Error",
                 description: "Password must be at least 8 characters long",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 5000
             })
             return
         }
@@ -93,7 +96,8 @@ const SecuritySettings = () => {
 
             toast({
                 title: "Success",
-                description: "Password changed successfully"
+                description: "Password changed successfully",
+                duration: 5000
             })
             setPasswordForm({
                 currentPassword: '',
@@ -110,7 +114,8 @@ const SecuritySettings = () => {
             await dispatch(logoutAllDevices()).unwrap()
             toast({
                 title: "Success",
-                description: "Logged out from all devices"
+                description: "Logged out from all devices",
+                duration: 5000
             })
         } catch {
             // Error is handled by the useEffect
