@@ -26,32 +26,32 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 // Request FCM token and handle registration
 export const requestForToken = async () => {
     try {
-        console.log('🔥 Requesting FCM token...');
+        // Requesting FCM token...
 
         // Check if browser supports notifications
         if (!('Notification' in window)) {
-            console.log('❌ This browser does not support notifications');
+            // This browser does not support notifications
             return null;
         }
 
         // Check current permission status
         let permission = Notification.permission;
-        console.log('🔐 Current notification permission:', permission);
+        // Current notification permission: ${permission}
 
         // If permission is default, request it
         if (permission === 'default') {
-            console.log('📝 Requesting notification permission...');
+            // Requesting notification permission...
             permission = await Notification.requestPermission();
-            console.log('🔐 New notification permission:', permission);
+            // New notification permission: ${permission}
         }
 
         // If permission is denied, return null
         if (permission === 'denied') {
-            console.log('❌ Notification permission denied');
+            // Notification permission denied
             return null;
         }
 
-        console.log('🔑 Getting FCM token with VAPID key...');
+        // Getting FCM token with VAPID key...
 
         // Get FCM token
         const token = await getToken(messaging, {
@@ -59,14 +59,14 @@ export const requestForToken = async () => {
         });
 
         if (token) {
-            console.log("✅ FCM Token obtained:", token);
+            // FCM Token obtained successfully
 
             // Store token in localStorage for persistence
             localStorage.setItem('fcm_token', token);
 
             return token;
         } else {
-            console.log("❌ No registration token available.");
+            // No registration token available
             return null;
         }
     } catch (error) {
@@ -88,17 +88,17 @@ export const clearStoredToken = () => {
 // Handle foreground messages
 export const onMessageListener = () =>
     new Promise((resolve) => {
-        console.log('👂 Setting up onMessage listener...');
+        // Setting up onMessage listener...
 
         onMessage(messaging, (payload) => {
-            console.log("🔔 Foreground message received in firebase-messaging.js:", payload);
+            // Foreground message received
             resolve(payload);
         });
     });
 
 // Handle notification click (for background notifications)
 export const handleNotificationClick = (notification) => {
-    console.log("Notification clicked:", notification);
+            // Notification clicked
 
     // Close the notification
     notification.close();
@@ -161,22 +161,22 @@ export const forceServiceWorkerRegistration = async () => {
     }
 
     try {
-        console.log('🔄 Force registering service worker...');
+        // Force registering service worker...
 
         // Unregister existing service workers first
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (let registration of registrations) {
-            console.log('🗑️ Unregistering existing service worker:', registration.scope);
+            // Unregistering existing service worker
             await registration.unregister();
         }
 
         // Register new service worker
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        console.log('✅ Service Worker registered:', registration.scope);
+        await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        // Service Worker registered successfully
 
         // Wait for it to be ready
         await navigator.serviceWorker.ready;
-        console.log('✅ Service Worker ready');
+        // Service Worker ready
 
         return true;
     } catch (error) {

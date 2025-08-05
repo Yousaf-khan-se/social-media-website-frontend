@@ -285,7 +285,7 @@ export const fetchBlockedKeywords = createAsyncThunk(
             if (!data.success) {
                 return rejectWithValue(data)
             }
-            console.log('Fetched blocked keywords:', data);
+            // Fetched blocked keywords successfully
             return data
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: error.message })

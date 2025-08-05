@@ -126,10 +126,10 @@ export const updateProfile = createAsyncThunk(
             if (!data.success) {
                 return rejectWithValue(data)
             }
-            console.log('update Profile data: ', data)
+            // Profile data updated successfully
             return data
         } catch (error) {
-            console.log('update Profile error: ', error)
+            // Profile update failed
             return rejectWithValue(error.response?.data || { error: error.message })
         }
     }

@@ -17,11 +17,11 @@ class SocketService {
         })
 
         this.socket.on('connect', () => {
-            console.log('🟢 Connected to socket server')
+            // Connected to socket server
         })
 
         this.socket.on('disconnect', () => {
-            console.log('🔴 Disconnected from socket server')
+            // Disconnected from socket server
         })
 
         this.socket.on('error', (error) => {

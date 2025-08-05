@@ -27,10 +27,10 @@ export const updateProfile = createAsyncThunk(
             if (!data.success) {
                 return rejectWithValue(data)
             }
-            console.log('update Profile data: ', data)
+            // Profile data updated successfully
             return data
         } catch (error) {
-            console.log('update Profile error: ', error)
+            // Profile update failed
             return rejectWithValue(error.response?.data || { error: error.message })
         }
     }
@@ -143,7 +143,7 @@ const profileSlice = createSlice({
                 state.error = null
             })
             .addCase(fetchProfile.fulfilled, (state, action) => {
-                console.log('fetchProfile fulfilled: ', action.payload)
+                // Profile fetched successfully
                 state.isLoading = false
                 state.currentProfile = action.payload.user
                 state.visibility = action.payload.visibility || 'public'

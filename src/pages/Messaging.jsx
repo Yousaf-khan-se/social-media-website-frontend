@@ -30,7 +30,7 @@ const Messaging = () => {
     useEffect(
         () => {
             if (user) {
-                console.log('User is authenticated, initializing messaging...')
+                // User is authenticated, initializing messaging...
                 // Fetch chats
                 dispatch(fetchChats())
 
@@ -39,12 +39,12 @@ const Messaging = () => {
 
                 socket.on('connect', () => {
                     setIsConnected(true)
-                    console.log('Connected to messaging server')
+                    // Connected to messaging server
                 })
 
                 socket.on('disconnect', () => {
                     setIsConnected(false)
-                    console.log('Disconnected from messaging server')
+                    // Disconnected from messaging server
                 })
 
                 socket.on('error', (error) => {
@@ -53,17 +53,17 @@ const Messaging = () => {
 
                 // Listen for online status events
                 socket.on('userOnline', (data) => {
-                    console.log('User came online:', data.user)
+                    // User came online
                     dispatch(updateOnlineUserStatus(data.user))
                 })
 
                 socket.on('userOffline', (data) => {
-                    console.log('User went offline:', data.user)
+                    // User went offline
                     dispatch(updateOnlineUserStatus(data.user))
                 })
 
                 return () => {
-                    console.log('🧹 Cleaning up main socket listeners')
+                    // Cleaning up main socket listeners
                     socket.off('connect')
                     socket.off('disconnect')
                     socket.off('error')
@@ -75,7 +75,7 @@ const Messaging = () => {
         }, [user, dispatch])
 
     useEffect(() => {
-        console.log('🎯 Setting up typing event listeners...', { user: user?.firstName })
+        // Setting up typing event listeners
         const typingTimeouts = typingTimeoutsRef.current
 
         const handleUserTyping = (data) => {
@@ -132,11 +132,11 @@ const Messaging = () => {
         // Wait for socket to be connected before setting up listeners
         const setupListeners = () => {
             if (socketService.isConnected()) {
-                console.log('✅ Socket connected, setting up typing listeners')
+                // Socket connected, setting up typing listeners
                 socketService.on('userTyping', handleUserTyping)
                 socketService.on('messageSeen', handleMessageSeen)
             } else {
-                console.log('⏳ Socket not connected, waiting...')
+                // Socket not connected, waiting...
                 setTimeout(setupListeners, 100)
             }
         }
@@ -144,7 +144,7 @@ const Messaging = () => {
         setupListeners()
 
         return () => {
-            console.log('🧹 Cleaning up typing event listeners')
+            // Cleaning up typing event listeners
             socketService.off('userTyping', handleUserTyping)
             socketService.off('messageSeen', handleMessageSeen)
 
@@ -209,7 +209,7 @@ const Messaging = () => {
 
     useEffect(() => {
         if (!user) {
-            console.log('🚀 No user, skipping socket setup')
+            // No user, skipping socket setup
             return
         }
 
@@ -236,7 +236,7 @@ const Messaging = () => {
             if (socketService.isConnected()) {
                 socketService.on('receiveMessage', handleReceiveMessage)
             } else {
-                console.log('🚀 Socket not connected yet, retrying in 100ms...')
+                // Socket not connected yet, retrying in 100ms...
                 setTimeout(setupListener, 100)
             }
         }

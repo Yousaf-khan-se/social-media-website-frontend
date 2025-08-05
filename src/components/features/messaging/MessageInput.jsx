@@ -49,7 +49,7 @@ const MessageInput = ({ roomId }) => {
     const handleTyping = () => {
         if (!isTyping) {
             setIsTyping(true)
-            console.log('🟡 Sending typing=true for room:', roomId)
+            // Sending typing=true for room
             socketService.sendTyping(roomId, true)
         }
 
@@ -61,7 +61,7 @@ const MessageInput = ({ roomId }) => {
         // Set new timeout
         typingTimeoutRef.current = setTimeout(() => {
             setIsTyping(false)
-            console.log('🟡 Sending typing=false for room:', roomId)
+            // Sending typing=false for room
             socketService.sendTyping(roomId, false)
         }, 1000)
     }
@@ -112,7 +112,7 @@ const MessageInput = ({ roomId }) => {
         setMessage('')
         setSelectedFiles([])
         setIsTyping(false)
-        console.log('🟡 Sending typing=false (after message sent) for room:', roomId)
+        // Sending typing=false (after message sent) for room
         socketService.sendTyping(roomId, false)
 
         if (textareaRef.current) {
