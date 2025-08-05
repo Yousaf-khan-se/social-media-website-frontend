@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { useForm, FormProvider } from 'react-hook-form'
+import { useToast } from '@/hooks/use-toast'
 
 export const CreatePostCard = () => {
     const dispatch = useDispatch()
@@ -20,6 +21,8 @@ export const CreatePostCard = () => {
     const MAX_FILES = 10
     const MAX_FILE_SIZE_MB = 15
 
+    const { toast } = useToast();
+
     const inputRef = useRef(null)
     const methods = useForm()
 
@@ -31,7 +34,14 @@ export const CreatePostCard = () => {
         let errors = []
 
         if (totalFiles > MAX_FILES) {
-            setErrorMsg(`You can only upload up to ${MAX_FILES} files.`)
+            const errorMessage = `You can only upload up to ${MAX_FILES} files.`;
+            setErrorMsg(errorMessage);
+            toast({
+                title: "Too Many Files",
+                description: errorMessage,
+                variant: "destructive",
+                duration: 4000,
+            });
             inputRef.current.value = "" // reset input
             return
         }
@@ -45,12 +55,30 @@ export const CreatePostCard = () => {
         })
 
         if (errors.length > 0) {
-            setErrorMsg(errors.join("\n"))
+            const errorMessage = errors.join("\n");
+            setErrorMsg(errorMessage);
+            toast({
+                title: "File Size Error",
+                description: `Some files exceed the ${MAX_FILE_SIZE_MB}MB limit and were not added.`,
+                variant: "destructive",
+                duration: 4000,
+            });
         } else {
             setErrorMsg("")
         }
 
-        setMediaFiles(prev => [...prev, ...validFiles])
+        setMediaFiles(prev => {
+            const updated = [...prev, ...validFiles];
+            // Show success toast for added files
+            if (validFiles.length > 0) {
+                toast({
+                    title: "Files Added",
+                    description: `${validFiles.length} file${validFiles.length > 1 ? 's' : ''} added successfully.`,
+                    duration: 2000,
+                });
+            }
+            return updated;
+        });
     }
 
     const handleSubmit = async (e) => {
@@ -62,26 +90,82 @@ export const CreatePostCard = () => {
             let mediaUploadFailed = false;
 
             // Try to create the post
-            const resultAction = await dispatch(createPost({ content }));
-            const post = resultAction.payload?.post || resultAction.payload?.data;
+            try {
+                const resultAction = await dispatch(createPost({ content }));
+                const post = resultAction.payload?.post || resultAction.payload?.data;
 
-            if (!post) {
-                setErrorMsg("Failed to create post. Please try again.");
-                postUploadFailed = true;
-            }
+                if (!post) {
+                    const errorMessage = "Failed to create post. Please try again.";
+                    setErrorMsg(errorMessage);
+                    toast({
+                        title: "Post Creation Failed",
+                        description: errorMessage,
+                        variant: "destructive",
+                        duration: 4000,
+                    });
+                    postUploadFailed = true;
+                } else {
+                    // Show success message for post creation
+                    const successMessage = mediaFiles.length > 0 ? "Post created! Uploading media..." : "Post created successfully!";
+                    toast({
+                        title: "Success",
+                        description: successMessage,
+                        duration: 3000,
+                    });
 
-            // If post created, try to upload media
-            if (post && mediaFiles.length > 0) {
-                setIsUploading(true);
-                const formData = new FormData();
-                mediaFiles.forEach(file => formData.append('media', file));
-                const mediaResult = await dispatch(uploadPostMedia({ id: post._id || post.id, media: formData })).unwrap();
-                setIsUploading(false);
+                    // If post created, try to upload media
+                    if (mediaFiles.length > 0) {
+                        setIsUploading(true);
+                        try {
+                            const formData = new FormData();
+                            mediaFiles.forEach(file => formData.append('media', file));
+                            const mediaResult = await dispatch(uploadPostMedia({ id: post._id || post.id, media: formData })).unwrap();
+                            setIsUploading(false);
 
-                if (!mediaResult.payload || !mediaResult.payload.success) {
-                    setErrorMsg("Post created, but media upload failed. Please try uploading media again.");
-                    mediaUploadFailed = true;
+                            if (!mediaResult.success) {
+                                const errorMessage = "Post created, but media upload failed. Please try uploading media again.";
+                                setErrorMsg(errorMessage);
+                                toast({
+                                    title: "Media Upload Failed",
+                                    description: errorMessage,
+                                    variant: "destructive",
+                                    duration: 5000,
+                                });
+                                mediaUploadFailed = true;
+                            } else {
+                                // Show success message for media upload
+                                toast({
+                                    title: "Media Uploaded",
+                                    description: "Your post with media has been published successfully!",
+                                    duration: 3000,
+                                });
+                            }
+                        } catch (error) {
+                            setIsUploading(false);
+                            console.error('Media upload failed:', error);
+                            const errorMessage = "Post created, but media upload failed. Please try uploading media again.";
+                            setErrorMsg(errorMessage);
+                            toast({
+                                title: "Media Upload Failed",
+                                description: errorMessage,
+                                variant: "destructive",
+                                duration: 5000,
+                            });
+                            mediaUploadFailed = true;
+                        }
+                    }
                 }
+            } catch (error) {
+                console.error('Post creation failed:', error);
+                const errorMessage = "Failed to create post. Please try again.";
+                setErrorMsg(errorMessage);
+                toast({
+                    title: "Post Creation Failed",
+                    description: errorMessage,
+                    variant: "destructive",
+                    duration: 4000,
+                });
+                postUploadFailed = true;
             }
 
             // Reset form only if both succeeded
@@ -91,6 +175,14 @@ export const CreatePostCard = () => {
                 setErrorMsg('');
                 if (inputRef.current) inputRef.current.value = '';
             }
+        } else {
+            // Show toast for empty post
+            toast({
+                title: "Empty Post",
+                description: "Please write something before posting.",
+                variant: "destructive",
+                duration: 3000,
+            });
         }
     }
 
