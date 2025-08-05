@@ -370,6 +370,12 @@ const chatSlice = createSlice({
         },
         clearLastPermissionRequestResult: (state) => {
             state.lastPermissionRequestResult = null
+        },
+        removeMessage: (state, action) => {
+            const { messageId } = action.payload
+            Object.keys(state.messages).forEach(roomId => {
+                state.messages[roomId] = state.messages[roomId].filter(m => m._id !== messageId)
+            })
         }
     },
     extraReducers: (builder) => {
@@ -556,7 +562,8 @@ export const {
     addPermissionRequest,
     updatePermissionRequest,
     removePermissionRequest,
-    clearLastPermissionRequestResult
+    clearLastPermissionRequestResult,
+    removeMessage
 } = chatSlice.actions
 
 export default chatSlice.reducer

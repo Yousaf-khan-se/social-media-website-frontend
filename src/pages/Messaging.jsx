@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation } from 'react-router-dom'
-import { fetchChats, clearError, updateOnlineUserStatus, fetchChatPermissionRequests, setActiveChat, addMessage, markMessageAsSeen, updateUnreadCount, setTypingUsers, clearTypingUsers } from '@/store/slices/chatSlice'
+import { fetchChats, clearError, updateOnlineUserStatus, fetchChatPermissionRequests, setActiveChat, addMessage, markMessageAsSeen, updateUnreadCount, setTypingUsers, clearTypingUsers, updateMessage, removeMessage } from '@/store/slices/chatSlice'
 import { useAuth } from '@/hooks/useAuth'
 import socketService from '@/services/socketService'
 import ChatList from '@/components/features/messaging/ChatList'
@@ -17,7 +17,7 @@ const Messaging = () => {
     const dispatch = useDispatch()
     const location = useLocation()
     const { user } = useAuth()
-    const { chats, loading, error, activeChat } = useSelector(state => state.chats)
+    const { chats, loading, error, activeChat, messages } = useSelector(state => state.chats)
     const [showNewChat, setShowNewChat] = useState(false)
     const [showPermissionRequests, setShowPermissionRequests] = useState(false)
     const [isConnected, setIsConnected] = useState(false)
@@ -129,12 +129,47 @@ const Messaging = () => {
             }))
         }
 
-        // Wait for socket to be connected before setting up listeners
+        const handleMessageDeleted = (data) => {
+            const { messageId, deletedBy, messageUpdate, isCompletelyDeleted } = data
+
+            if (isCompletelyDeleted) {
+                // Remove message completely from state
+                dispatch(removeMessage({ messageId }))
+            } else if (messageUpdate) {
+                // Update message content (sender deletion - "deleted by owner")
+                // Find which room this message belongs to
+                const roomId = Object.keys(messages).find(roomId =>
+                    messages[roomId]?.some(msg => msg._id === messageId)
+                )
+                if (roomId) {
+                    dispatch(updateMessage({
+                        chatRoom: roomId,
+                        messageId,
+                        updates: messageUpdate
+                    }))
+                }
+            } else {
+                // Soft delete - hide message for specific user
+                const roomId = Object.keys(messages).find(roomId =>
+                    messages[roomId]?.some(msg => msg._id === messageId)
+                )
+                if (roomId) {
+                    dispatch(updateMessage({
+                        chatRoom: roomId,
+                        messageId,
+                        updates: {
+                            deletedFor: [...(data.deletedFor || []), deletedBy]
+                        }
+                    }))
+                }
+            }
+        }        // Wait for socket to be connected before setting up listeners
         const setupListeners = () => {
             if (socketService.isConnected()) {
                 // Socket connected, setting up typing listeners
                 socketService.on('userTyping', handleUserTyping)
                 socketService.on('messageSeen', handleMessageSeen)
+                socketService.on('messageDeleted', handleMessageDeleted)
             } else {
                 // Socket not connected, waiting...
                 setTimeout(setupListeners, 100)
@@ -147,6 +182,7 @@ const Messaging = () => {
             // Cleaning up typing event listeners
             socketService.off('userTyping', handleUserTyping)
             socketService.off('messageSeen', handleMessageSeen)
+            socketService.off('messageDeleted', handleMessageDeleted)
 
             // Clear all typing timeouts
             typingTimeouts.forEach(timeoutId => {
@@ -154,7 +190,7 @@ const Messaging = () => {
             })
             typingTimeouts.clear()
         }
-    }, [dispatch, user])
+    }, [dispatch, user, messages])
 
     // Separate effect to join rooms when chats are loaded and socket is connected
     useEffect(() => {

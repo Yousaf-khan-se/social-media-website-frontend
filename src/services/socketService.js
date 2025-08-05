@@ -69,6 +69,12 @@ class SocketService {
         }
     }
 
+    deleteMessage(messageId) {
+        if (this.socket) {
+            this.socket.emit('deleteMessage', { messageId })
+        }
+    }
+
     on(event, callback) {
         if (this.socket) {
             this.socket.on(event, callback)
