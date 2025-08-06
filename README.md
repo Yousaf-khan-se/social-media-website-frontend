@@ -1,7 +1,7 @@
 # deployment link
 
-https://social-media-website-frontend-pied.vercel.app/
-
+old link: https://social-media-website-frontend-pied.vercel.app/
+redirected to: https://hash-by-m-yousaf.vercel.app/
 
 # Social Media Platform Frontend
 
