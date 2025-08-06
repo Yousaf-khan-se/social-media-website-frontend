@@ -11,15 +11,15 @@ import { fetchSettings } from './store/slices/settingsSlice'
 import { fetchNotifications } from './store/slices/notificationsSlice'
 
 // Lazy load pages for code splitting
-const LoginPage = lazy(() => import('./pages/LoginPage').then(module => ({ default: module.LoginPage })))
-const RegisterPage = lazy(() => import('./pages/RegisterPage').then(module => ({ default: module.RegisterPage })))
-const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
-const ExplorePage = lazy(() => import('./pages/ExplorePage').then(module => ({ default: module.ExplorePage })))
-const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(module => ({ default: module.NotificationsPage })))
-const ProfilePage = lazy(() => import('./pages/ProfilePage').then(module => ({ default: module.ProfilePage })))
-const UserProfilePage = lazy(() => import('./pages/UserProfilePage').then(module => ({ default: module.UserProfilePage })))
-const PostPage = lazy(() => import('./pages/PostPage').then(module => ({ default: module.PostPage })))
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })))
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })))
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then(m => ({ default: m.RegisterPage })))
+const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })))
+const ExplorePage = lazy(() => import('./pages/ExplorePage').then(m => ({ default: m.ExplorePage })))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage').then(m => ({ default: m.UserProfilePage })))
+const PostPage = lazy(() => import('./pages/PostPage').then(m => ({ default: m.PostPage })))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
 const Messaging = lazy(() => import('./pages/Messaging'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
