@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
-import { register } from '@/store/slices/authSlice'
+import { clearError, register } from '@/store/slices/authSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,6 +26,7 @@ export const RegisterPage = () => {
     const { toast } = useToast();
 
     if (isAuthenticated) {
+        dispatch(clearError());
         navigate('/login', { replace: true });
     }
 
@@ -75,6 +76,7 @@ export const RegisterPage = () => {
                                     name="firstName"
                                     type="text"
                                     placeholder="First name"
+                                    autocomplete="given-name"
                                     value={formData.firstName}
                                     onChange={handleChange}
                                     required
@@ -90,6 +92,7 @@ export const RegisterPage = () => {
                                     name="lastName"
                                     type="text"
                                     placeholder="Last name"
+                                    authocomplete="family-name"
                                     value={formData.lastName}
                                     onChange={handleChange}
                                     required
@@ -106,6 +109,7 @@ export const RegisterPage = () => {
                                 name="username"
                                 type="text"
                                 placeholder="Choose a username"
+                                autocomplete="username"
                                 value={formData.username}
                                 onChange={handleChange}
                                 required
@@ -121,6 +125,7 @@ export const RegisterPage = () => {
                                 name="email"
                                 type="email"
                                 placeholder="Enter your email"
+                                autocomplete="email"
                                 value={formData.email}
                                 onChange={handleChange}
                                 required
@@ -137,6 +142,7 @@ export const RegisterPage = () => {
                                     name="password"
                                     type={showPassword ? "text" : "password"}
                                     placeholder="Create a password"
+                                    autocomplete="new-password"
                                     value={formData.password}
                                     onChange={handleChange}
                                     required
@@ -168,6 +174,7 @@ export const RegisterPage = () => {
                                     name="confirmPassword"
                                     type={showConfirmPassword ? "text" : "password"}
                                     placeholder="Confirm your password"
+                                    autocomplete="new-password"
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
                                     required
@@ -213,12 +220,16 @@ export const RegisterPage = () => {
                     </form>
                     <div className="mt-4 text-center text-sm">
                         <span className="text-muted-foreground">Already have an account? </span>
-                        <Link
-                            to="/login"
-                            className="text-primary hover:underline font-medium"
+                        <a
+                            onClick={(e) => {
+                                e.preventDefault()
+                                dispatch(clearError())
+                                navigate('/login', { replace: true })
+                            }}
+                            className="text-primary hover:underline font-medium cursor-pointer"
                         >
                             Log in
-                        </Link>
+                        </a>
                     </div>
                 </CardContent>
             </Card>
