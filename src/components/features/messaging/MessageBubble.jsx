@@ -14,7 +14,6 @@ import { deleteMessage } from '@/store/slices/chatSlice'
 import { useUnderDevelopment } from '@/hooks/useUnderDevelopment'
 import { useLongPress } from '@/hooks/useLongPress'
 import { useToast } from '@/hooks/use-toast'
-import { duration } from 'zod/v4/classic/iso.cjs'
 // import socketService from '@/services/socketService'
 
 const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
