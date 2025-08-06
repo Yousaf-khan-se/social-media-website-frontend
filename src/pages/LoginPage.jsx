@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { clearError, login } from '@/store/slices/authSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Hash, Eye, EyeOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -142,6 +143,20 @@ export const LoginPage = () => {
                             className="text-primary hover:underline font-medium cursor-pointer"
                         >
                             Sign up
+                        </a>
+
+                        <Separator className='my-2 w-60 justify-self-center' />
+
+                        <span className="text-muted-foreground">Forgot your password? </span>
+                        <a
+                            onClick={(e) => {
+                                e.preventDefault()
+                                dispatch(clearError())
+                                navigate('/forget-password', { replace: true })
+                            }}
+                            className="text-primary hover:underline font-medium cursor-pointer"
+                        >
+                            Forgot password?
                         </a>
                     </div>
                 </CardContent>

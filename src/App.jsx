@@ -9,6 +9,9 @@ import './App.css'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchSettings } from './store/slices/settingsSlice'
 import { fetchNotifications } from './store/slices/notificationsSlice'
+import PasswordReset from './pages/ForgetPassword'
+import ForgetPassword from './pages/ForgetPassword'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 
 // Lazy load pages for code splitting
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })))
@@ -58,6 +61,8 @@ function App() {
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forget-password" element={<ForgetPassword />} />
+                <Route path="/reset-password/:otp/:username/:email" element={<ResetPasswordPage />} />
                 <Route path="/" element={<Layout />}>
                   <Route index element={
                     <ProtectedRoute>

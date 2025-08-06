@@ -80,9 +80,24 @@ export const deleteAccount = createAsyncThunk(
 // Forgot password
 export const forgotPassword = createAsyncThunk(
     'auth/forgotPassword',
-    async (email, { rejectWithValue }) => {
+    async (data, { rejectWithValue }) => {
         try {
-            const response = await api.post('/auth/forgot-password', { email })
+            const response = await api.post('/auth/forgot-password', { email: data.email, username: data.username })
+            return {
+                ...response.data,
+                requestEmail: data.email // Store the email from request
+            }
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
+        }
+    }
+)
+
+export const verifyOTP = createAsyncThunk(
+    'auth/verifyOTP',
+    async ({ otp, email }, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/auth/verify-otp', { otp, email })
             return response.data
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: error.message })
@@ -93,9 +108,9 @@ export const forgotPassword = createAsyncThunk(
 // Reset password
 export const resetPassword = createAsyncThunk(
     'auth/resetPassword',
-    async ({ token, newPassword }, { rejectWithValue }) => {
+    async ({ otp, newPassword }, { rejectWithValue }) => {
         try {
-            const response = await api.post('/auth/reset-password', { token, newPassword })
+            const response = await api.post('/auth/reset-password', { otp, newPassword })
             return response.data
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: error.message })
@@ -194,6 +209,13 @@ const initialState = {
     isLoading: false,
     error: null,
     initialized: false, // Has the app checked auth status?
+    success: false, // For actions like password reset
+    message: null, // For success messages,
+    forgotPasswordMailAdress: null, // For storing email address used in forgot password
+
+    otpVerifying: false,
+    otpData: null, // For storing OTP data {email, username, message} message is actually success message
+    otpError: null, // For storing OTP errors
 }
 
 const authSlice = createSlice({
@@ -203,12 +225,21 @@ const authSlice = createSlice({
         clearError: (state) => {
             state.error = null
         },
+        clearSuccess: (state) => {
+            state.success = null
+        },
         clearAuth: (state) => {
             state.user = null
             state.isAuthenticated = false
             state.error = null
             state.initialized = true
         },
+        resetOTPdata: (state) => {
+            state.otpData = null
+        },
+        resetOTPerror: (state) => {
+            state.otpError = null
+        }
     },
     extraReducers: (builder) => {
         builder
@@ -328,8 +359,59 @@ const authSlice = createSlice({
                 state.isLoading = false
                 state.error = action.payload
             })
+            // Forgot password
+            .addCase(forgotPassword.pending, (state) => {
+                state.isLoading = true
+                state.error = null
+                state.success = false
+            })
+            .addCase(forgotPassword.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.success = true
+                state.message = action.payload.data?.message || 'Check your email for reset instructions.'
+                state.forgotPasswordMailAdress = action.payload.requestEmail || null
+                state.error = null
+            })
+            .addCase(forgotPassword.rejected, (state, action) => {
+                state.isLoading = false
+                state.error = action.payload?.error || action.payload?.message || 'Failed to send password reset email.'
+                state.success = false
+            })
+
+            //reset password
+            .addCase(resetPassword.pending, (state) => {
+                state.isLoading = true
+                state.error = null
+                state.success = false
+            })
+            .addCase(resetPassword.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.success = true
+                state.message = action.payload.data?.message || 'Your password has been reset successfully.'
+                state.error = null
+            })
+            .addCase(resetPassword.rejected, (state, action) => {
+                state.isLoading = false
+                state.error = action.payload?.error || action.payload?.message || 'Failed to reset password.'
+                state.success = false
+            })
+
+            // otp verification
+            .addCase(verifyOTP.pending, (state) => {
+                state.otpVerifying = true
+                state.otpError = null
+            })
+            .addCase(verifyOTP.fulfilled, (state, action) => {
+                state.otpVerifying = false
+                state.otpData = action.payload
+                state.otpError = null
+            })
+            .addCase(verifyOTP.rejected, (state, action) => {
+                state.otpVerifying = false
+                state.otpError = action.payload?.error || action.payload?.message || 'Failed to verify OTP.'
+            })
     },
 })
 
-export const { clearError, clearAuth } = authSlice.actions
+export const { clearError, clearAuth, clearSuccess, resetOTPerror, resetOTPdata } = authSlice.actions
 export default authSlice.reducer
