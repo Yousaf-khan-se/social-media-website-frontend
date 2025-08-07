@@ -6,8 +6,7 @@ import {
     setPushSupport,
     setFcmToken,
     subscribeToPushNotifications,
-    fetchNotifications,
-    resetNotifications
+    fetchNotifications
 } from '@/store/slices/notificationsSlice';
 import { updateNotificationSettings } from '@/store/slices/settingsSlice';
 import notificationService from '@/services/notificationService';
@@ -128,8 +127,6 @@ const NotificationManager = ({ children }) => {
                                 case 'message':
                                 case 'chat_created':
                                 case 'group_created':
-                                    navigate(chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages');
-                                    break;
                                 case 'group_added':
                                     navigate(chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages');
                                     break;
@@ -139,10 +136,18 @@ const NotificationManager = ({ children }) => {
                                 case 'like':
                                 case 'comment':
                                 case 'share':
-                                    navigate(postId ? `/post/${postId}` : '/notifications');
+                                    if (postId) {
+                                        navigate(`/post/${postId}`);
+                                    } else {
+                                        navigate('/notifications');
+                                    }
                                     break;
                                 case 'follow':
-                                    navigate(senderId ? `/user/${senderId}` : '/notifications');
+                                    if (senderId) {
+                                        navigate(`/user/${senderId}`);
+                                    } else {
+                                        navigate('/notifications');
+                                    }
                                     break;
                                 default:
                                     navigate('/notifications');

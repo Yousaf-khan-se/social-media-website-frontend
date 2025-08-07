@@ -48,7 +48,10 @@ export const CommentCard = ({ comment, postId }) => {
     const repliesCount = comment.replies?.length || 0
 
     return (
-        <div className="flex space-x-3 p-3 border-b border-border">
+        <div
+            className="flex space-x-3 p-3 border-b border-border"
+            data-comment-id={comment._id || comment.id}
+        >
             <Avatar className="h-8 w-8">
                 <AvatarImage src={comment.user?.profilePicture} alt={`${comment.user?.firstName} ${comment.user?.lastName}`} />
                 <AvatarFallback className="text-xs">{comment.user?.firstName?.charAt(0)}{comment.user?.lastName?.charAt(0)}</AvatarFallback>

@@ -50,34 +50,81 @@ export const NotificationsPage = () => {
 
     const handleNotificationClick = (notification) => {
         // Mark as read when clicked
-        if (!notification.read && !notification.isRead) {
-            handleMarkAsRead(notification._id || notification.id)
+        if (!notification.isRead) {
+            handleMarkAsRead(notification._id)
         }
 
-        // Navigate based on notification type
-        const { type, postId, chatRoomId, senderId } = notification.data || notification
+        // Use the new notification structure
+        const { data, type, sender } = notification
+        let { postId, chatRoomId, messageId, commentId } = data || {}
+        postId = postId?._id || postId
+        chatRoomId = chatRoomId?._id || chatRoomId
+        messageId = messageId?._id || messageId
+        commentId = commentId?._id || commentId
+        const senderId = sender?._id || notification.senderId || sender
+
+        console.log('Notification click:', { type, data, sender: senderId })
 
         switch (type) {
             case 'message':
+                // Navigate to specific chat with message highlighting
+                if (chatRoomId && messageId) {
+                    navigate(`/messages?chat=${chatRoomId}&highlight=${messageId}`)
+                } else if (chatRoomId) {
+                    navigate(`/messages?chat=${chatRoomId}`)
+                } else {
+                    navigate('/messages')
+                }
+                break
+
             case 'chat_created':
             case 'group_created':
             case 'group_added':
-                navigate(chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages')
+                // Navigate to the specific chat room
+                if (chatRoomId) {
+                    navigate(`/messages?chat=${chatRoomId}`)
+                } else {
+                    navigate('/messages')
+                }
                 break
+
             case 'chat_permission_request':
                 // Navigate to messages page with permission requests view
                 navigate('/messages?view=requests')
                 break
+
             case 'like':
-            case 'comment':
             case 'share':
-                navigate(postId ? `/post/${postId}` : '/notifications')
+                // Navigate to the specific post
+                if (postId) {
+                    navigate(`/post/${postId}`)
+                } else {
+                    console.warn('No postId found for notification:', notification)
+                }
                 break
+
+            case 'comment':
+                // Navigate to post with comment highlighting
+                if (postId && commentId) {
+                    navigate(`/post/${postId}?highlight=${commentId}`)
+                } else if (postId) {
+                    navigate(`/post/${postId}`)
+                } else {
+                    console.warn('No postId found for comment notification:', notification)
+                }
+                break
+
             case 'follow':
-                navigate(senderId ? `/user/${senderId}` : '/notifications')
+                // Navigate to the sender's profile
+                if (senderId) {
+                    navigate(`/user/${senderId}`)
+                } else {
+                    console.warn('No senderId found for follow notification:', notification)
+                }
                 break
+
             default:
-                // For other types, stay on notifications page
+                console.warn('Unhandled notification type:', type, notification)
                 break
         }
     }
@@ -139,20 +186,36 @@ export const NotificationsPage = () => {
     const filteredNotifications = notifications?.filter(notification => {
         if (filterType === 'all') return true
         if (filterType === 'unread') return !notification.read && !notification.isRead
+
+        const notificationType = notification.type
+
+        // Group message-related notifications under 'message' filter
         if (filterType === 'message') {
-            return ['message', 'chat_created', 'group_created', 'group_added', 'chat_permission_request'].includes(notification.type)
+            return ['message', 'chat_created', 'group_created', 'group_added', 'chat_permission_request'].includes(notificationType)
         }
-        return notification.type === filterType
+
+        // Group social interactions
+        if (filterType === 'social') {
+            return ['like', 'comment', 'share', 'follow'].includes(notificationType)
+        }
+
+        // Direct type matching for specific filters
+        return notificationType === filterType
     }) || []
 
     const filterOptions = [
         { value: 'all', label: 'All', count: notifications?.length || 0 },
         { value: 'unread', label: 'Unread', count: unreadCount },
-        { value: 'like', label: 'Likes', count: notifications?.filter(n => n.type === 'like').length || 0 },
-        { value: 'comment', label: 'Comments', count: notifications?.filter(n => n.type === 'comment').length || 0 },
-        { value: 'follow', label: 'Follows', count: notifications?.filter(n => n.type === 'follow').length || 0 },
-        { value: 'message', label: 'Messages', count: notifications?.filter(n => n.type === 'message' || n.type === 'chat_created' || n.type === 'group_created' || n.type === 'group_added' || n.type === 'chat_permission_request').length || 0 },
-        { value: 'share', label: 'Shares', count: notifications?.filter(n => n.type === 'share').length || 0 },
+        {
+            value: 'message',
+            label: 'Messages',
+            count: notifications?.filter(n => ['message', 'chat_created', 'group_created', 'group_added', 'chat_permission_request'].includes(n.type)).length || 0
+        },
+        {
+            value: 'social',
+            label: 'Social',
+            count: notifications?.filter(n => ['like', 'comment', 'share', 'follow'].includes(n.type)).length || 0
+        },
     ]
 
     return (
@@ -183,24 +246,26 @@ export const NotificationsPage = () => {
                     </div>
                 </div>
 
-                {/* Filter tabs */}
-                <div className="flex items-center gap-1 px-4 py-2 border-b border-border/50">
-                    {filterOptions.map((option) => (
-                        <Button
-                            key={option.value}
-                            variant={filterType === option.value ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setFilterType(option.value)}
-                            className="flex items-center gap-2"
-                        >
-                            {option.label}
-                            {option.count > 0 && (
-                                <Badge variant="secondary" className="text-xs">
-                                    {option.count}
-                                </Badge>
-                            )}
-                        </Button>
-                    ))}
+                {/* Filter tabs - Mobile responsive scrollable */}
+                <div className="flex items-center overflow-x-auto gap-1 px-4 py-2 border-b border-border/50 scrollbar-hide">
+                    <div className="flex gap-1 min-w-max">
+                        {filterOptions.map((option) => (
+                            <Button
+                                key={option.value}
+                                variant={filterType === option.value ? "default" : "ghost"}
+                                size="sm"
+                                onClick={() => setFilterType(option.value)}
+                                className="flex items-center gap-2 whitespace-nowrap"
+                            >
+                                {option.label}
+                                {option.count > 0 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                        {option.count > 99 ? '99+' : option.count}
+                                    </Badge>
+                                )}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
