@@ -54,11 +54,11 @@ export const register = createAsyncThunk(
 // Logout action
 export const logout = createAsyncThunk(
     'auth/logout',
-    async () => {
+    async (_, { rejectWithValue }) => {
         try {
             await api.post('/auth/logout')
-        } catch {
-            // Even if logout fails, clear local state
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: error.message })
         }
         return true
     }
@@ -368,7 +368,7 @@ const authSlice = createSlice({
             .addCase(forgotPassword.fulfilled, (state, action) => {
                 state.isLoading = false
                 state.success = true
-                state.message = action.payload.data?.message || 'Check your email for reset instructions.'
+                state.message = action.payload?.message || 'Check your email for reset instructions.'
                 state.forgotPasswordMailAdress = action.payload.requestEmail || null
                 state.error = null
             })
@@ -387,7 +387,7 @@ const authSlice = createSlice({
             .addCase(resetPassword.fulfilled, (state, action) => {
                 state.isLoading = false
                 state.success = true
-                state.message = action.payload.data?.message || 'Your password has been reset successfully.'
+                state.message = action.payload?.message || 'Your password has been reset successfully.'
                 state.error = null
             })
             .addCase(resetPassword.rejected, (state, action) => {
@@ -400,15 +400,18 @@ const authSlice = createSlice({
             .addCase(verifyOTP.pending, (state) => {
                 state.otpVerifying = true
                 state.otpError = null
+                state.otpData = null
             })
             .addCase(verifyOTP.fulfilled, (state, action) => {
-                state.otpVerifying = false
                 state.otpData = action.payload
                 state.otpError = null
+                state.otpVerifying = false
             })
             .addCase(verifyOTP.rejected, (state, action) => {
                 state.otpVerifying = false
-                state.otpError = action.payload?.error || action.payload?.message || 'Failed to verify OTP.'
+                state.otpData = null
+                console.log('OTP verification failed:', action.payload)
+                state.otpError = action.payload?.error || 'Failed to verify OTP.'
             })
     },
 })

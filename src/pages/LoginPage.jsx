@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { clearError, login } from '@/store/slices/authSlice'
+import { clearError, clearSuccess, login } from '@/store/slices/authSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -22,6 +22,8 @@ export const LoginPage = () => {
     // Only redirect if initialized and authenticated
     useEffect(() => {
         if (initialized && isAuthenticated) {
+            dispatch(clearError());
+            dispatch(clearSuccess());
             navigate('/', { replace: true })
         }
     }, [initialized, isAuthenticated, navigate])
@@ -140,6 +142,7 @@ export const LoginPage = () => {
                             onClick={(e) => {
                                 e.preventDefault()
                                 dispatch(clearError())
+                                dispatch(clearSuccess());
                                 navigate('/register', { replace: true })
                             }}
                             className="text-primary hover:underline font-medium cursor-pointer"
@@ -154,6 +157,7 @@ export const LoginPage = () => {
                             onClick={(e) => {
                                 e.preventDefault()
                                 dispatch(clearError())
+                                dispatch(clearSuccess());
                                 navigate('/forget-password', { replace: true })
                             }}
                             className="text-primary hover:underline font-medium cursor-pointer"

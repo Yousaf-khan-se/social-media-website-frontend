@@ -21,14 +21,16 @@ const ForgetPassword = () => {
     const [step, setStep] = useState(1); // 1: request OTP, 2: enter OTP
     const [timer, setTimer] = useState(0);
     const otpInputRef = useRef(null);
-    const { isLoading, error, success, message, otpVerifying, otpData, otpError, forgotPasswordMailAdress, isAuthenticated, initialized } = useSelector(state => state.auth);
+    const { isLoading, error, success, message, otpVerifying, otpData, otpError, forgotPasswordMailAdress, user, initialized } = useSelector(state => state.auth);
 
     // Redirect authenticated users to home
     useEffect(() => {
-        if (initialized && isAuthenticated) {
+        if (initialized && user) {
+            dispatch(clearError());
+            dispatch(clearSuccess());
             navigate('/', { replace: true });
         }
-    }, [initialized, isAuthenticated, navigate]);
+    }, [initialized, user, navigate, dispatch]);
 
     // Timer for resend OTP
     useEffect(() => {
@@ -68,17 +70,26 @@ const ForgetPassword = () => {
 
     useEffect(() => {
         if (otpData) {
+
+            if (!otp || !otpData.username || !otpData.email) {
+                toast({
+                    title: 'Error',
+                    description: 'Missing required data for password reset. Please try again.',
+                    variant: 'destructive',
+                });
+                return;
+            }
             toast({
                 title: 'OTP Verified',
                 description: (otpData.message || 'You can now reset your password.'),
-                variant: 'success',
                 duration: 3000
             });
-            navigate(`/reset-password/${otp}/${otpData.username}/${otpData.email}`, { state: { identifier } });
+            dispatch(clearError());
+            dispatch(clearSuccess());
+            navigate(`/reset-password/${otp}/${otpData.username}/${otpData.email}`, { replace: true });
         }
-    }, [otpData, identifier, navigate, toast, otp]);
+    }, [otpData, identifier, navigate, toast, otp, dispatch]);    // Show loading spinner if auth check is not done yet
 
-    // Show loading spinner if auth check is not done yet
     if (!initialized) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
@@ -155,7 +166,7 @@ const ForgetPassword = () => {
                                     name="identifier"
                                     type="text"
                                     placeholder="Enter your email or username"
-                                    autoComplete="username"
+                                    autocomplete="username"
                                     value={identifier}
                                     onChange={e => setIdentifier(e.target.value)}
                                     required
@@ -188,7 +199,7 @@ const ForgetPassword = () => {
                                     placeholder="6-digit code"
                                     ref={otpInputRef}
                                     value={otp}
-                                    onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                                    onChange={e => setOtp(e.target.value)}
                                     required
                                     disabled={isLoading}
                                     className="tracking-widest text-lg text-center font-mono"
@@ -235,6 +246,7 @@ const ForgetPassword = () => {
                             onClick={e => {
                                 e.preventDefault();
                                 dispatch(clearError());
+                                dispatch(clearSuccess());
                                 navigate('/login', { replace: true });
                             }}
                             className="text-primary hover:underline font-medium cursor-pointer"
