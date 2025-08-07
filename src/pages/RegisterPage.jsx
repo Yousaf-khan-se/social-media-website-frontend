@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
-import { clearError, register } from '@/store/slices/authSlice'
+import { clearError, clearSuccess, register } from '@/store/slices/authSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,6 +29,7 @@ export const RegisterPage = () => {
     useEffect(() => {
         if (initialized && isAuthenticated) {
             dispatch(clearError());
+            dispatch(clearSuccess());
             navigate('/', { replace: true });
         }
     }, [initialized, isAuthenticated, navigate, dispatch])
@@ -57,6 +58,8 @@ export const RegisterPage = () => {
             description: "Your account has been created successfully. Now Please login with your account.",
             variant: "success"
         });
+        dispatch(clearError());
+        dispatch(clearSuccess());
         navigate('/login', { replace: true });
     }
 
@@ -239,6 +242,7 @@ export const RegisterPage = () => {
                             onClick={(e) => {
                                 e.preventDefault()
                                 dispatch(clearError())
+                                dispatch(clearSuccess())
                                 navigate('/login', { replace: true })
                             }}
                             className="text-primary hover:underline font-medium cursor-pointer"

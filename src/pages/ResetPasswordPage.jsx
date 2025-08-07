@@ -23,6 +23,9 @@ const ResetPasswordPage = () => {
     // Get otp, username, email from params (e.g. /reset-password/:otp/:username/:email)
     const { otp, username, email } = useParams();
 
+    console.log('ResetPasswordPage - URL params:', { otp, username, email });
+    console.log('ResetPasswordPage - initialized:', initialized);
+
     // Timer: 12 minutes (720 seconds)
     const RESET_TIME = 12 * 60;
     const [timer, setTimer] = useState(RESET_TIME);
@@ -31,9 +34,11 @@ const ResetPasswordPage = () => {
     // Redirect authenticated users to home
     useEffect(() => {
         if (user && initialized) {
+            dispatch(clearError());
+            dispatch(clearSuccess());
             navigate('/', { replace: true });
         }
-    }, [user, initialized, navigate]);
+    }, [user, initialized, navigate, dispatch]);
 
     // Start countdown timer
     useEffect(() => {
@@ -52,6 +57,7 @@ const ResetPasswordPage = () => {
                 variant: 'destructive',
             });
             dispatch(clearError());
+            dispatch(clearSuccess());
             navigate('/forget-password', { replace: true });
         }
     }, [timer, toast, dispatch, navigate]);
@@ -63,6 +69,7 @@ const ResetPasswordPage = () => {
                 description: message || 'Your password has been reset successfully. Please log in.',
             });
             dispatch(clearSuccess());
+            dispatch(clearError());
             navigate('/login', { replace: true });
         }
     }, [message, dispatch, navigate, success, toast]);
@@ -78,18 +85,22 @@ const ResetPasswordPage = () => {
         }
     }, [error, toast]);
 
-    // If no otp, show error and redirect
+    // If no otp after initialization, show error and redirect
     useEffect(() => {
-        if (!otp) {
+        // Only check for otp after the component is fully initialized
+        if (initialized && !otp) {
+            console.log('No OTP found in URL params, redirecting to login');
             toast({
                 title: 'Invalid Request for Password Reset',
                 description: 'Invalid Request or Page Expired. Generate a new request or login.',
                 variant: 'destructive',
                 duration: 3000
             });
+            dispatch(clearError());
+            dispatch(clearSuccess());
             navigate('/login', { replace: true });
         }
-    }, [otp, toast, navigate]);
+    }, [otp, toast, navigate, initialized, dispatch]);
 
     // Show loading if auth check is not complete
     if (!initialized) {
@@ -254,6 +265,7 @@ const ResetPasswordPage = () => {
                             onClick={e => {
                                 e.preventDefault();
                                 dispatch(clearError());
+                                dispatch(clearSuccess());
                                 navigate('/login', { replace: true });
                             }}
                             className="text-primary hover:underline font-medium cursor-pointer"
