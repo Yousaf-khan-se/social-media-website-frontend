@@ -4,6 +4,9 @@
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-messaging-compat.js');
 
+// Your website domain - update this to your actual domain
+const WEBSITE_DOMAIN = 'https://hash-by-m-yousaf.vercel.app';
+
 // Initialize Firebase with configuration
 // Note: Service workers can't access import.meta.env, so we use hardcoded config
 firebase.initializeApp({
@@ -127,11 +130,14 @@ self.addEventListener('notificationclick', function (event) {
         }
     }
 
+    // Convert relative URL to absolute URL
+    const absoluteUrl = url.startsWith('http') ? url : WEBSITE_DOMAIN + url;
+
     // Open the URL in a new window/tab or focus existing one
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
             // Try to find an existing window with the same origin
-            const targetUrl = new URL(url, self.location.origin);
+            const targetUrl = new URL(absoluteUrl);
 
             for (let i = 0; i < clientList.length; i++) {
                 const client = clientList[i];
@@ -150,7 +156,7 @@ self.addEventListener('notificationclick', function (event) {
 
             // If no existing window found, open a new one
             if (clients.openWindow) {
-                return clients.openWindow(targetUrl.href);
+                return clients.openWindow(absoluteUrl);
             }
         })
     );

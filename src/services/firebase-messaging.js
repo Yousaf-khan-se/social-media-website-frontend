@@ -3,6 +3,9 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
+// Your website domain
+const WEBSITE_DOMAIN = import.meta.env.VITE_WEBSITE_DOMAIN || 'https://hash-by-m-yousaf.vercel.app';
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -108,6 +111,8 @@ export const handleNotificationClick = (notification) => {
         window.focus();
     }
 
+    let url = '/notifications'; // Default URL
+
     // Handle different notification types
     if (notification.data) {
         const { type, postId, chatId, userId, chatRoomId, senderId } = notification.data;
@@ -119,41 +124,46 @@ export const handleNotificationClick = (notification) => {
             case 'group_added':
                 // Navigate to messages page with specific chat if available
                 if (chatRoomId || chatId) {
-                    window.location.href = `/messages?chat=${chatRoomId || chatId}`;
+                    url = `/messages?chat=${chatRoomId || chatId}`;
                 } else {
-                    window.location.href = '/messages';
+                    url = '/messages';
                 }
                 break;
             case 'chat_permission_request':
                 // Navigate to messages page with permission requests view
-                window.location.href = '/messages?view=requests';
+                url = '/messages?view=requests';
                 break;
             case 'like':
             case 'comment':
             case 'share':
                 // Navigate to specific post
                 if (postId) {
-                    window.location.href = `/post/${postId}`;
+                    url = `/post/${postId}`;
+                } else {
+                    url = '/notifications';
                 }
                 break;
             case 'follow':
                 // Navigate to profile - use correct route
                 if (senderId || userId) {
-                    window.location.href = `/user/${senderId || userId}`;
+                    url = `/user/${senderId || userId}`;
+                } else {
+                    url = '/notifications';
                 }
                 break;
             case 'admin':
                 // Navigate to notifications
-                window.location.href = '/notifications';
+                url = '/notifications';
                 break;
             default:
                 // Navigate to notifications page by default
-                window.location.href = '/notifications';
+                url = '/notifications';
         }
-    } else {
-        // Default action - navigate to notifications
-        window.location.href = '/notifications';
     }
+
+    // Convert to absolute URL and navigate
+    const absoluteUrl = url.startsWith('http') ? url : WEBSITE_DOMAIN + url;
+    window.location.href = absoluteUrl;
 };
 
 export default messaging;

@@ -45,11 +45,11 @@ export const Sidebar = () => {
         <>
             {/* Desktop Sidebar */}
             <div className={cn(
-                "hidden md:flex flex-col bg-card border-r border-border transition-all duration-300 ease-in-out",
+                "hidden md:flex flex-col bg-card border-r border-border transition-all duration-300 ease-in-out h-screen",
                 collapsed ? "w-16" : "w-64"
             )}>
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-border">
+                <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
                     {!collapsed && (
                         <div className="flex items-center space-x-2">
                             <Hash className="h-8 w-8 text-primary" />
@@ -66,42 +66,44 @@ export const Sidebar = () => {
                     </Button>
                 </div>
 
-                {/* Navigation */}
-                <ScrollArea className="flex-1 px-3 py-4">
-                    <nav className="space-y-1">
-                        {navigation.map((item) => {
-                            const isActive = location.pathname === item.href
-                            const Icon = item.icon
-                            const showBadge = item.name === 'Notifications' && unreadCount > 0
+                {/* Navigation - This will now expand to fill available space */}
+                <div className="flex-1 flex flex-col min-h-0">
+                    <ScrollArea className="flex-1 px-3 py-4">
+                        <nav className="space-y-1">
+                            {navigation.map((item) => {
+                                const isActive = location.pathname === item.href
+                                const Icon = item.icon
+                                const showBadge = item.name === 'Notifications' && unreadCount > 0
 
-                            return (
-                                <Link
-                                    key={item.name}
-                                    to={item.href}
-                                    className={cn(
-                                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                                        isActive
-                                            ? "bg-primary text-primary-foreground"
-                                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                    )}
-                                >
-                                    <div className="relative">
-                                        <Icon className="h-5 w-5" />
-                                        {showBadge && (
-                                            <span className="absolute -top-2 -right-2 h-4 w-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                                                {unreadCount > 99 ? '99+' : unreadCount}
-                                            </span>
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        to={item.href}
+                                        className={cn(
+                                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                            isActive
+                                                ? "bg-primary text-primary-foreground"
+                                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                                         )}
-                                    </div>
-                                    {!collapsed && <span>{item.name}</span>}
-                                </Link>
-                            )
-                        })}
-                    </nav>
-                </ScrollArea>
+                                    >
+                                        <div className="relative">
+                                            <Icon className="h-5 w-5" />
+                                            {showBadge && (
+                                                <span className="absolute -top-2 -right-2 h-4 w-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+                                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {!collapsed && <span>{item.name}</span>}
+                                    </Link>
+                                )
+                            })}
+                        </nav>
+                    </ScrollArea>
+                </div>
 
-                {/* User Profile */}
-                <div className="p-4 border-t border-border">
+                {/* User Profile - Now positioned at bottom */}
+                <div className="p-4 border-t border-border flex-shrink-0 mt-auto">
                     {user && (
                         <div className={cn(
                             "flex items-center gap-3",
