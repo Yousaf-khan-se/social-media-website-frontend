@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { clearError, clearSuccess, forgotPassword, resetOTPdata, resetOTPerror, verifyOTP } from '@/store/slices/authSlice';
 
 const OTP_LENGTH = 6;
-const RESEND_INTERVAL = 20; // seconds
+const RESEND_INTERVAL = 60; // seconds
 
 
 const ForgetPassword = () => {
@@ -61,7 +61,7 @@ const ForgetPassword = () => {
         if (success) {
             toast({
                 title: 'OTP Sent',
-                description: message || 'A one-time password has been sent to your email.',
+                description: message || 'A otp has been sent to your email.',
             });
             setStep(2);
             setTimer(RESEND_INTERVAL);
