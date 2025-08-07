@@ -284,14 +284,41 @@ const Messaging = () => {
         }
     }, [dispatch, user])
 
-    // Handle URL parameters for direct navigation to permission requests
+    // Handle URL parameters for direct navigation to permission requests and specific chats
     useEffect(() => {
         const urlParams = new URLSearchParams(location.search)
-        if (urlParams.get('view') === 'requests') {
+        const chatId = urlParams.get('chat')
+        const highlightMessageId = urlParams.get('highlight')
+        const view = urlParams.get('view')
+
+        if (view === 'requests') {
             setShowPermissionRequests(true)
             // Also ensure permission requests are fetched
             dispatch(fetchChatPermissionRequests('received'))
             dispatch(fetchChatPermissionRequests('sent'))
+        } else if (chatId) {
+            // Set the active chat from URL parameter
+            dispatch(setActiveChat(chatId))
+            setShowChatWindow(true)
+
+            // If there's a message to highlight, handle it after messages load
+            if (highlightMessageId) {
+                // Wait a bit for messages to load, then highlight
+                setTimeout(() => {
+                    const messageElement = document.querySelector(`[data-message-id="${highlightMessageId}"]`)
+                    if (messageElement) {
+                        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        messageElement.classList.add('bg-blue-100', 'dark:bg-blue-900/30', 'transition-colors')
+
+                        // Remove highlighting after 3 seconds
+                        setTimeout(() => {
+                            if (messageElement) {
+                                messageElement.classList.remove('bg-blue-100', 'dark:bg-blue-900/30')
+                            }
+                        }, 3000)
+                    }
+                }, 1000) // Wait 1 second for messages to load
+            }
         }
     }, [location, dispatch])
 

@@ -69,3 +69,21 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Scrollbar styles for notification filters on mobile */
+.notification-filters::-webkit-scrollbar {
+  height: 2px;
+}
+
+.notification-filters::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notification-filters::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1px;
+}
+
+.notification-filters::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+}

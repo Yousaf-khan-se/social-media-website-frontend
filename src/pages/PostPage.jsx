@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useEffect, useRef } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
@@ -11,8 +11,14 @@ import { CommentCard, AddCommentForm } from '@/components/features/posts/Comment
 export const PostPage = () => {
     const { postId } = useParams()
     const navigate = useNavigate()
+    const location = useLocation()
     const dispatch = useDispatch()
     const { currentPost, isLoading, error } = useSelector(state => state.posts)
+    const commentHighlightRef = useRef(null)
+
+    // Get highlight parameter from URL
+    const urlParams = new URLSearchParams(location.search)
+    const highlightCommentId = urlParams.get('highlight')
 
     useEffect(() => {
         if (postId) {
@@ -22,6 +28,27 @@ export const PostPage = () => {
             dispatch(clearCurrentPost())
         }
     }, [dispatch, postId])
+
+    // Handle comment highlighting after post loads
+    useEffect(() => {
+        if (highlightCommentId && currentPost && commentHighlightRef.current) {
+            const commentElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`)
+            if (commentElement) {
+                // Scroll to the comment
+                commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+                // Add highlighting effect
+                commentElement.classList.add('bg-yellow-100', 'dark:bg-yellow-900/30', 'transition-colors')
+
+                // Remove highlighting after 3 seconds
+                setTimeout(() => {
+                    if (commentElement) {
+                        commentElement.classList.remove('bg-yellow-100', 'dark:bg-yellow-900/30')
+                    }
+                }, 3000)
+            }
+        }
+    }, [highlightCommentId, currentPost])
 
     const handleGoBack = () => {
         navigate(-1)

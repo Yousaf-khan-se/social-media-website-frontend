@@ -372,6 +372,7 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                                     ? 'bg-blue-500 text-white'
                                     : 'bg-gray-100 text-gray-900'
                                     }`}
+                                data-message-id={message._id || message.id}
                                 {...longPressProps}
                             >
                                 {renderMessageContent()}
