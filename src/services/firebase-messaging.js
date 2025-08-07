@@ -98,7 +98,7 @@ export const onMessageListener = () =>
 
 // Handle notification click (for background notifications)
 export const handleNotificationClick = (notification) => {
-            // Notification clicked
+    // Notification clicked
 
     // Close the notification
     notification.close();
@@ -110,18 +110,23 @@ export const handleNotificationClick = (notification) => {
 
     // Handle different notification types
     if (notification.data) {
-        const { type, postId, chatId, userId } = notification.data;
+        const { type, postId, chatId, userId, chatRoomId, senderId } = notification.data;
 
         switch (type) {
             case 'message':
             case 'chat_created':
             case 'group_created':
+            case 'group_added':
                 // Navigate to messages page with specific chat if available
-                if (chatId) {
-                    window.location.href = `/messages?chat=${chatId}`;
+                if (chatRoomId || chatId) {
+                    window.location.href = `/messages?chat=${chatRoomId || chatId}`;
                 } else {
                     window.location.href = '/messages';
                 }
+                break;
+            case 'chat_permission_request':
+                // Navigate to messages page with permission requests view
+                window.location.href = '/messages?view=requests';
                 break;
             case 'like':
             case 'comment':
@@ -132,9 +137,9 @@ export const handleNotificationClick = (notification) => {
                 }
                 break;
             case 'follow':
-                // Navigate to profile
-                if (userId) {
-                    window.location.href = `/profile/${userId}`;
+                // Navigate to profile - use correct route
+                if (senderId || userId) {
+                    window.location.href = `/user/${senderId || userId}`;
                 }
                 break;
             case 'admin':
