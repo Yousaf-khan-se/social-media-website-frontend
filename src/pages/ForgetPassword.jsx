@@ -21,7 +21,14 @@ const ForgetPassword = () => {
     const [step, setStep] = useState(1); // 1: request OTP, 2: enter OTP
     const [timer, setTimer] = useState(0);
     const otpInputRef = useRef(null);
-    const { isLoading, error, success, message, otpVerifying, otpData, otpError, forgotPasswordMailAdress } = useSelector(state => state.auth);
+    const { isLoading, error, success, message, otpVerifying, otpData, otpError, forgotPasswordMailAdress, isAuthenticated, initialized } = useSelector(state => state.auth);
+
+    // Redirect authenticated users to home
+    useEffect(() => {
+        if (initialized && isAuthenticated) {
+            navigate('/', { replace: true });
+        }
+    }, [initialized, isAuthenticated, navigate]);
 
     // Timer for resend OTP
     useEffect(() => {
@@ -70,6 +77,18 @@ const ForgetPassword = () => {
             navigate(`/reset-password/${otp}/${otpData.username}/${otpData.email}`, { state: { identifier } });
         }
     }, [otpData, identifier, navigate, toast, otp]);
+
+    // Show loading spinner if auth check is not done yet
+    if (!initialized) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Checking authentication...</p>
+                </div>
+            </div>
+        )
+    }
 
 
     const handleRequestOtp = async (e) => {
