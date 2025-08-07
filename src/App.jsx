@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { ProtectedRoute } from './components/common/ProtectedRoute'
 import NotificationManager from './components/common/NotificationManager'
+import ServiceWorkerNavigationHandler from './components/common/ServiceWorkerNavigationHandler'
 import ErrorBoundary from './components/common/ErrorBoundary'
 import { Toaster } from './components/ui/toaster'
 import './App.css'
@@ -55,6 +56,7 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
+        <ServiceWorkerNavigationHandler />
         <NotificationManager>
           <div className="min-h-screen bg-background text-foreground">
             <Suspense fallback={<PageLoader />}>

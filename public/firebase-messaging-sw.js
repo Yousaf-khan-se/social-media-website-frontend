@@ -52,6 +52,7 @@ function getNotificationActions(type) {
         case 'message':
         case 'chat_created':
         case 'group_created':
+        case 'group_added':
             return [
                 { action: 'reply', title: 'Reply', icon: '/vite.svg' },
                 ...baseActions
@@ -66,6 +67,11 @@ function getNotificationActions(type) {
         case 'follow':
             return [
                 { action: 'view_profile', title: 'View Profile', icon: '/vite.svg' },
+                ...baseActions
+            ];
+        case 'chat_permission_request':
+            return [
+                { action: 'view_requests', title: 'View Requests', icon: '/vite.svg' },
                 ...baseActions
             ];
         default:
@@ -85,19 +91,25 @@ self.addEventListener('notificationclick', function (event) {
 
     let url = '/notifications'; // Default URL
 
-    if (action === 'reply' && (type === 'message' || type === 'chat_created' || type === 'group_created')) {
+    if (action === 'reply' && (type === 'message' || type === 'chat_created' || type === 'group_created' || type === 'group_added')) {
         url = chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages';
     } else if (action === 'view_post' && postId) {
         url = `/post/${postId}`;
     } else if (action === 'view_profile' && senderId) {
-        url = `/profile/${senderId}`;
+        url = `/user/${senderId}`;
+    } else if (action === 'view_requests') {
+        url = '/messages?view=requests';
     } else {
         // Handle default click based on notification type
         switch (type) {
             case 'message':
             case 'chat_created':
             case 'group_created':
+            case 'group_added':
                 url = chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages';
+                break;
+            case 'chat_permission_request':
+                url = '/messages?view=requests';
                 break;
             case 'like':
             case 'comment':
@@ -105,7 +117,7 @@ self.addEventListener('notificationclick', function (event) {
                 url = postId ? `/post/${postId}` : '/notifications';
                 break;
             case 'follow':
-                url = senderId ? `/profile/${senderId}` : '/notifications';
+                url = senderId ? `/user/${senderId}` : '/notifications';
                 break;
             case 'admin':
                 url = '/notifications';
@@ -118,17 +130,27 @@ self.addEventListener('notificationclick', function (event) {
     // Open the URL in a new window/tab or focus existing one
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
-            // Try to find an existing window
+            // Try to find an existing window with the same origin
+            const targetUrl = new URL(url, self.location.origin);
+
             for (let i = 0; i < clientList.length; i++) {
                 const client = clientList[i];
-                if (client.url.includes(new URL(url, self.location.origin).pathname) && 'focus' in client) {
+                const clientUrl = new URL(client.url);
+
+                // Check if client is from the same origin
+                if (clientUrl.origin === targetUrl.origin && 'focus' in client) {
+                    // Navigate the existing client to the target URL
+                    client.postMessage({
+                        type: 'NAVIGATE',
+                        url: url
+                    });
                     return client.focus();
                 }
             }
 
             // If no existing window found, open a new one
             if (clients.openWindow) {
-                return clients.openWindow(url);
+                return clients.openWindow(targetUrl.href);
             }
         })
     );

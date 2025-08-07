@@ -1,10 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
     addNotification,
     setPushSupport,
     setFcmToken,
-    subscribeToPushNotifications
+    subscribeToPushNotifications,
+    fetchNotifications,
+    resetNotifications
 } from '@/store/slices/notificationsSlice';
 import { updateNotificationSettings } from '@/store/slices/settingsSlice';
 import notificationService from '@/services/notificationService';
@@ -14,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const NotificationManager = ({ children }) => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { toast } = useToast();
     const { user } = useSelector(state => state.auth);
     const { pushNotifications } = useSelector(state => state.settings?.settings?.notifications || {});
@@ -104,16 +108,53 @@ const NotificationManager = ({ children }) => {
                         };
 
                         dispatch(addNotification(newNotification));
+
+                        // Refresh notifications list to get updated data from server
+                        try {
+                            dispatch(fetchNotifications({ page: 1, limit: 20 }));
+                        } catch (refreshError) {
+                            console.error('Error refreshing notifications:', refreshError);
+                        }
                     }
 
                     // Show toast notification if notifications are enabled
                     if (pushNotifications) {
+                        const handleToastClick = () => {
+                            if (!payload.data) return;
+
+                            const { type, postId, chatRoomId, senderId } = payload.data;
+
+                            switch (type) {
+                                case 'message':
+                                case 'chat_created':
+                                case 'group_created':
+                                    navigate(chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages');
+                                    break;
+                                case 'group_added':
+                                    navigate(chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages');
+                                    break;
+                                case 'chat_permission_request':
+                                    navigate('/messages?view=requests');
+                                    break;
+                                case 'like':
+                                case 'comment':
+                                case 'share':
+                                    navigate(postId ? `/post/${postId}` : '/notifications');
+                                    break;
+                                case 'follow':
+                                    navigate(senderId ? `/user/${senderId}` : '/notifications');
+                                    break;
+                                default:
+                                    navigate('/notifications');
+                            }
+                        };
+
                         toast({
                             title: payload.notification?.title || 'New Notification',
                             description: payload.notification?.body,
                             action: (
                                 <button
-                                    onClick={() => handleNotificationClick(payload.data)}
+                                    onClick={handleToastClick}
                                     className="text-sm font-medium text-primary hover:underline"
                                 >
                                     View
@@ -137,35 +178,7 @@ const NotificationManager = ({ children }) => {
         setupListener();
 
         return cleanup;
-    }, [user, pushNotifications, dispatch, toast]);
-
-    const handleNotificationClick = (data) => {
-        if (!data) return;
-
-        const { type, postId, chatRoomId, senderId } = data;
-
-        switch (type) {
-            case 'message':
-            case 'chat_created':
-            case 'group_created':
-                window.location.href = chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages';
-                break;
-            case 'chat_permission_request':
-                // Navigate to messages page with permission requests view
-                window.location.href = '/messages?view=requests';
-                break;
-            case 'like':
-            case 'comment':
-            case 'share':
-                window.location.href = postId ? `/post/${postId}` : '/notifications';
-                break;
-            case 'follow':
-                window.location.href = senderId ? `/profile/${senderId}` : '/notifications';
-                break;
-            default:
-                window.location.href = '/notifications';
-        }
-    };
+    }, [user, pushNotifications, dispatch, toast, navigate]);
 
     return <>{children}</>;
 };

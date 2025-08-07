@@ -15,7 +15,10 @@ import {
     Filter,
     MoreVertical,
     Trash2,
-    Check
+    Check,
+    Share,
+    Users,
+    Shield
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -58,6 +61,7 @@ export const NotificationsPage = () => {
             case 'message':
             case 'chat_created':
             case 'group_created':
+            case 'group_added':
                 navigate(chatRoomId ? `/messages?chat=${chatRoomId}` : '/messages')
                 break
             case 'chat_permission_request':
@@ -70,7 +74,7 @@ export const NotificationsPage = () => {
                 navigate(postId ? `/post/${postId}` : '/notifications')
                 break
             case 'follow':
-                navigate(senderId ? `/profile/${senderId}` : '/notifications')
+                navigate(senderId ? `/user/${senderId}` : '/notifications')
                 break
             default:
                 // For other types, stay on notifications page
@@ -99,12 +103,19 @@ export const NotificationsPage = () => {
             case 'like':
                 return <Heart className="h-4 w-4 text-red-500" />
             case 'comment':
+                return <MessageCircle className="h-4 w-4 text-blue-500" />
             case 'message':
                 return <MessageCircle className="h-4 w-4 text-blue-500" />
             case 'follow':
                 return <UserPlus className="h-4 w-4 text-green-500" />
             case 'share':
-                return <Heart className="h-4 w-4 text-purple-500" />
+                return <Share className="h-4 w-4 text-purple-500" />
+            case 'chat_created':
+            case 'group_created':
+            case 'group_added':
+                return <Users className="h-4 w-4 text-cyan-500" />
+            case 'chat_permission_request':
+                return <Shield className="h-4 w-4 text-orange-500" />
             default:
                 return <Bell className="h-4 w-4" />
         }
@@ -128,6 +139,9 @@ export const NotificationsPage = () => {
     const filteredNotifications = notifications?.filter(notification => {
         if (filterType === 'all') return true
         if (filterType === 'unread') return !notification.read && !notification.isRead
+        if (filterType === 'message') {
+            return ['message', 'chat_created', 'group_created', 'group_added', 'chat_permission_request'].includes(notification.type)
+        }
         return notification.type === filterType
     }) || []
 
@@ -137,7 +151,8 @@ export const NotificationsPage = () => {
         { value: 'like', label: 'Likes', count: notifications?.filter(n => n.type === 'like').length || 0 },
         { value: 'comment', label: 'Comments', count: notifications?.filter(n => n.type === 'comment').length || 0 },
         { value: 'follow', label: 'Follows', count: notifications?.filter(n => n.type === 'follow').length || 0 },
-        { value: 'message', label: 'Messages', count: notifications?.filter(n => n.type === 'message').length || 0 },
+        { value: 'message', label: 'Messages', count: notifications?.filter(n => n.type === 'message' || n.type === 'chat_created' || n.type === 'group_created' || n.type === 'group_added' || n.type === 'chat_permission_request').length || 0 },
+        { value: 'share', label: 'Shares', count: notifications?.filter(n => n.type === 'share').length || 0 },
     ]
 
     return (
