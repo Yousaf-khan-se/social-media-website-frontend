@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { clearError, login } from '@/store/slices/authSlice'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,13 @@ export const LoginPage = () => {
 
     const navigate = useNavigate();
 
+    // Only redirect if initialized and authenticated
+    useEffect(() => {
+        if (initialized && isAuthenticated) {
+            navigate('/', { replace: true })
+        }
+    }, [initialized, isAuthenticated, navigate])
+
     // Show loading spinner if auth check is not done yet
     if (!initialized) {
         return (
@@ -29,11 +36,6 @@ export const LoginPage = () => {
                 </div>
             </div>
         )
-    }
-
-    // Only redirect if initialized and authenticated
-    if (initialized && isAuthenticated) {
-        navigate('/', { replace: true })
     }
 
     const handleSubmit = (e) => {

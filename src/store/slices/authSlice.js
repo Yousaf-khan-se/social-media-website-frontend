@@ -259,7 +259,7 @@ const authSlice = createSlice({
                 state.isLoading = false
                 state.user = null
                 state.isAuthenticated = false
-                state.initialized = true // <--- ENSURE THIS IS ALWAYS TRUE
+                state.initialized = true
                 state.error = null
             })
             // Login
@@ -307,15 +307,15 @@ const authSlice = createSlice({
                 state.isLoading = false
                 state.user = null
                 state.isAuthenticated = false
-                state.initialized = true // <--- ENSURE THIS IS ALWAYS TRUE
+                state.initialized = true
                 state.error = action.payload
             })
             // Logout
             .addCase(logout.fulfilled, (state) => {
                 state.user = null
                 state.isAuthenticated = false
-                state.error = null
                 state.initialized = true
+                state.error = null
             })
             // Delete account
             .addCase(deleteAccount.pending, (state) => {
@@ -325,8 +325,8 @@ const authSlice = createSlice({
             .addCase(deleteAccount.fulfilled, (state) => {
                 state.user = null
                 state.isAuthenticated = false
-                state.error = null
                 state.initialized = true
+                state.error = null
                 state.isLoading = false
             })
             .addCase(deleteAccount.rejected, (state, action) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { clearError, register } from '@/store/slices/authSlice'
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast'
 
 export const RegisterPage = () => {
     const dispatch = useDispatch()
-    const { isAuthenticated, isLoading, error } = useSelector(state => state.auth)
+    const { isAuthenticated, isLoading, error, initialized } = useSelector(state => state.auth)
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [formData, setFormData] = useState({
@@ -25,9 +25,24 @@ export const RegisterPage = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
 
-    if (isAuthenticated) {
-        dispatch(clearError());
-        navigate('/login', { replace: true });
+    // Redirect authenticated users to home
+    useEffect(() => {
+        if (initialized && isAuthenticated) {
+            dispatch(clearError());
+            navigate('/', { replace: true });
+        }
+    }, [initialized, isAuthenticated, navigate, dispatch])
+
+    // Show loading spinner if auth check is not done yet
+    if (!initialized) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Checking authentication...</p>
+                </div>
+            </div>
+        )
     }
 
     const handleSubmit = async (e) => {

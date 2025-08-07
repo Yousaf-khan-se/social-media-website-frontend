@@ -12,7 +12,7 @@ const ResetPasswordPage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { toast } = useToast();
-    const { isLoading, error, success, message } = useSelector(state => state.auth);
+    const { isLoading, error, success, message, user, initialized } = useSelector(state => state.auth);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [formData, setFormData] = useState({
@@ -27,6 +27,13 @@ const ResetPasswordPage = () => {
     const RESET_TIME = 12 * 60;
     const [timer, setTimer] = useState(RESET_TIME);
     const timerRef = useRef();
+
+    // Redirect authenticated users to home
+    useEffect(() => {
+        if (user && initialized) {
+            navigate('/', { replace: true });
+        }
+    }, [user, initialized, navigate]);
 
     // Start countdown timer
     useEffect(() => {
@@ -50,7 +57,6 @@ const ResetPasswordPage = () => {
     }, [timer, toast, dispatch, navigate]);
 
     useEffect(() => {
-
         if (success) {
             toast({
                 title: 'Success!',
@@ -58,10 +64,8 @@ const ResetPasswordPage = () => {
             });
             dispatch(clearSuccess());
             navigate('/login', { replace: true });
-
         }
-
-    }, [message, dispatch, navigate, success, toast])
+    }, [message, dispatch, navigate, success, toast]);
 
     // Show error toast if error changes
     useEffect(() => {
@@ -73,8 +77,6 @@ const ResetPasswordPage = () => {
             });
         }
     }, [error, toast]);
-
-
 
     // If no otp, show error and redirect
     useEffect(() => {
@@ -88,6 +90,23 @@ const ResetPasswordPage = () => {
             navigate('/login', { replace: true });
         }
     }, [otp, toast, navigate]);
+
+    // Show loading if auth check is not complete
+    if (!initialized) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Redirect authenticated users
+    if (user) {
+        return null; // Will be redirected by useEffect
+    }
 
     const handleChange = (e) => {
         setFormData({
