@@ -67,7 +67,8 @@ export const uploadChatMedia = createAsyncThunk(
             const response = await api.put(`/chats/media/${roomId}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
-                }
+                },
+                timeout: 180000, // 3 minutes timeout for media uploads in case of poor connection
             })
             const data = response.data
             if (!data.success) {

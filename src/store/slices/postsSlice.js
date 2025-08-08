@@ -308,7 +308,7 @@ export const uploadPostMedia = createAsyncThunk(
             // Media files prepared for upload
             const response = await api.put(`/posts/media/${id}`, media,
                 {
-                    timeout: 120000, // 2 minutes timeout for media uploads
+                    timeout: 180000, // 3 minutes timeout for media uploads in case of poor connection
                 }
             )
             const data = response.data
