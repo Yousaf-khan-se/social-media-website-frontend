@@ -14,7 +14,9 @@ import {
     Shield,
     Eye,
     EyeOff,
-    MessageCircle
+    MessageCircle,
+    CheckCircle,
+    X
 } from 'lucide-react'
 import {
     fetchBlockedUsers,
@@ -51,7 +53,8 @@ const BlockedContent = () => {
                 title: "Error",
                 description: blockedError,
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             dispatch(clearBlockedError())
         }
@@ -64,14 +67,17 @@ const BlockedContent = () => {
             toast({
                 title: "Success",
                 description: "User unblocked successfully",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
         } catch (error) {
             toast({
                 title: "Error",
                 description: error || "Failed to unblock user",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
         } finally {
             setSaving(false)
@@ -88,14 +94,17 @@ const BlockedContent = () => {
             toast({
                 title: "Success",
                 description: "Keyword blocked successfully",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
         } catch (error) {
             toast({
                 title: "Error",
                 description: error || "Failed to block keyword",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
         } finally {
             setSaving(false)
@@ -109,14 +118,17 @@ const BlockedContent = () => {
             toast({
                 title: "Success",
                 description: "Keyword unblocked successfully",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
         } catch (error) {
             toast({
                 title: "Error",
                 description: error || "Failed to unblock keyword",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
         } finally {
             setSaving(false)
@@ -396,14 +408,17 @@ const BlockedContent = () => {
                                         toast({
                                             title: "Success",
                                             description: "All users unblocked",
-                                            duration: 5000
+                                            duration: 5000,
+                                            icon: <CheckCircle className="h-4 w-4" />,
+                                            variant: 'success'
                                         })
                                     } catch {
                                         toast({
                                             title: "Error",
                                             description: "Failed to unblock some users",
                                             variant: "destructive",
-                                            duration: 5000
+                                            duration: 5000,
+                                            icon: <X className="h-4 w-4" />
                                         })
                                     } finally {
                                         setSaving(false)
@@ -428,14 +443,17 @@ const BlockedContent = () => {
                                         toast({
                                             title: "Success",
                                             description: "All keywords removed",
-                                            duration: 5000
+                                            duration: 5000,
+                                            icon: <CheckCircle className="h-4 w-4" />,
+                                            variant: 'success'
                                         })
                                     } catch {
                                         toast({
                                             title: "Error",
                                             description: "Failed to remove some keywords",
                                             variant: "destructive",
-                                            duration: 5000
+                                            duration: 5000,
+                                            icon: <X className="h-4 w-4" />
                                         })
                                     } finally {
                                         setSaving(false)

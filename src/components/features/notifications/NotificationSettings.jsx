@@ -25,7 +25,8 @@ import {
     AlertTriangle,
     Settings,
     Trash2,
-    TestTube
+    TestTube,
+    X
 } from 'lucide-react';
 // import { duration } from 'zod/v4/classic/iso.cjs';
 
@@ -66,14 +67,16 @@ const NotificationSettings = () => {
                 title: "Settings saved",
                 description: "Your notification preferences have been updated",
                 icon: <CheckCircle className="h-4 w-4" />,
-                duration: 5000
+                duration: 5000,
+                variant: 'success'
             });
         } catch (error) {
             toast({
                 title: "Error",
                 description: error?.message || "Failed to save settings",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             });
         } finally {
             setIsSaving(false);
@@ -85,8 +88,9 @@ const NotificationSettings = () => {
             toast({
                 title: "Not supported",
                 description: "Push notifications are not supported in this browser",
-                variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <AlertTriangle className="h-4 w-4" />,
+                variant: 'warning'
             });
             return;
         }
@@ -96,15 +100,17 @@ const NotificationSettings = () => {
             toast({
                 title: "Push notifications enabled",
                 description: "You'll now receive push notifications",
-                variant: "default",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             });
         } catch (error) {
             toast({
                 title: "Error",
                 description: error?.message || "Failed to enable push notifications",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             });
         }
     };
@@ -115,15 +121,17 @@ const NotificationSettings = () => {
             toast({
                 title: "Push notifications disabled",
                 description: "You'll no longer receive push notifications",
-                variant: "default",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             });
         } catch (error) {
             toast({
                 title: "Error",
                 description: error?.message || "Failed to disable push notifications",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             });
         }
     };

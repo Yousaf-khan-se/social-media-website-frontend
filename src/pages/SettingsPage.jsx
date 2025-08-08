@@ -27,7 +27,9 @@ import {
     ChevronLeft,
     ChevronDown,
     Menu,
-    UserCog
+    UserCog,
+    X,
+    CheckCircle
 } from 'lucide-react'
 
 import PrivacySettings from '@/components/features/settings/PrivacySettings'
@@ -145,7 +147,8 @@ export const SettingsPage = () => {
                 title: "Error",
                 description: error.message || "Failed to load settings. Please try again.",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             dispatch(clearError())
         }
@@ -157,7 +160,8 @@ export const SettingsPage = () => {
                 title: "Export Failed",
                 description: exportError.message || "Failed to export settings. Please try again.",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             dispatch(clearExportError())
         }
@@ -169,7 +173,8 @@ export const SettingsPage = () => {
                 title: "Import Failed",
                 description: importError.message || "Failed to import settings. Please check the file format.",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             dispatch(clearImportError())
         }
@@ -181,7 +186,8 @@ export const SettingsPage = () => {
                 title: "Error",
                 description: updateError.message || "Failed to update settings. Please try again.",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             dispatch(clearUpdateError())
         }
@@ -193,7 +199,8 @@ export const SettingsPage = () => {
                 title: "Reset Failed",
                 description: resetError.message || "Failed to reset settings. Please try again.",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             dispatch(clearResetError())
         }
@@ -205,7 +212,9 @@ export const SettingsPage = () => {
             toast({
                 title: "Settings Exported",
                 description: "Your settings have been downloaded as a backup file.",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
         }
     }
@@ -216,7 +225,9 @@ export const SettingsPage = () => {
             toast({
                 title: "Settings Imported",
                 description: "Your settings have been restored from the backup file.",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
         }
     }
@@ -227,7 +238,9 @@ export const SettingsPage = () => {
             toast({
                 title: "Settings Reset",
                 description: `${section.charAt(0).toUpperCase() + section.slice(1)} settings have been reset to defaults.`,
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
         }
     }
@@ -238,7 +251,9 @@ export const SettingsPage = () => {
             toast({
                 title: "All Settings Reset",
                 description: "All settings have been reset to their default values.",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
         }
     }

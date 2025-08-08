@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Hash, MailCheck, TimerReset } from 'lucide-react';
+import { CheckCircle, Hash, MailCheck, TimerReset, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { clearError, clearSuccess, forgotPassword, resetOTPdata, resetOTPerror, verifyOTP } from '@/store/slices/authSlice';
@@ -55,13 +55,17 @@ const ForgetPassword = () => {
                 title: 'Error',
                 description: error || otpError,
                 variant: 'destructive',
-                duration: 3000
+                duration: 3000,
+                icon: <X className="h-4 w-4" />
             });
         }
         if (success) {
             toast({
                 title: 'OTP Sent',
                 description: message || 'A otp has been sent to your email.',
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success',
+                duration: 3000
             });
             setStep(2);
             setTimer(RESEND_INTERVAL);
@@ -76,13 +80,17 @@ const ForgetPassword = () => {
                     title: 'Error',
                     description: 'Missing required data for password reset. Please try again.',
                     variant: 'destructive',
+                    icon: <X className="h-4 w-4" />,
+                    duration: 3000
                 });
                 return;
             }
             toast({
                 title: 'OTP Verified',
                 description: (otpData.message || 'You can now reset your password.'),
-                duration: 3000
+                duration: 3000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             });
             dispatch(clearError());
             dispatch(clearSuccess());
@@ -133,6 +141,8 @@ const ForgetPassword = () => {
                 title: 'Invalid OTP',
                 description: 'Please enter a valid 6-digit OTP.',
                 variant: 'destructive',
+                duration: 3000,
+                icon: <X className="h-4 w-4" />
             });
             return;
         }

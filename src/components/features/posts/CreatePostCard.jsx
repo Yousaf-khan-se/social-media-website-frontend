@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { useForm, FormProvider } from 'react-hook-form'
 import { useToast } from '@/hooks/use-toast'
+import { CheckCircle, X } from 'lucide-react'
 
 export const CreatePostCard = () => {
     const dispatch = useDispatch()
@@ -41,6 +42,7 @@ export const CreatePostCard = () => {
                 description: errorMessage,
                 variant: "destructive",
                 duration: 4000,
+                icon: <X className="h-4 w-4" />
             });
             inputRef.current.value = "" // reset input
             return
@@ -62,6 +64,7 @@ export const CreatePostCard = () => {
                 description: `Some files exceed the ${MAX_FILE_SIZE_MB}MB limit and were not added.`,
                 variant: "destructive",
                 duration: 4000,
+                icon: <X className="h-4 w-4" />
             });
         } else {
             setErrorMsg("")
@@ -75,6 +78,8 @@ export const CreatePostCard = () => {
                     title: "Files Added",
                     description: `${validFiles.length} file${validFiles.length > 1 ? 's' : ''} added successfully.`,
                     duration: 2000,
+                    icon: <CheckCircle className="h-4 w-4" />,
+                    variant: 'success'
                 });
             }
             return updated;
@@ -102,6 +107,7 @@ export const CreatePostCard = () => {
                         description: errorMessage,
                         variant: "destructive",
                         duration: 4000,
+                        icon: <X className="h-4 w-4" />
                     });
                     postUploadFailed = true;
                 } else {
@@ -111,6 +117,8 @@ export const CreatePostCard = () => {
                         title: "Success",
                         description: successMessage,
                         duration: 3000,
+                        icon: <CheckCircle className="h-4 w-4" />,
+                        variant: 'success'
                     });
 
                     // If post created, try to upload media
@@ -130,6 +138,7 @@ export const CreatePostCard = () => {
                                     description: errorMessage,
                                     variant: "destructive",
                                     duration: 5000,
+                                    icon: <X className="h-4 w-4" />
                                 });
                                 mediaUploadFailed = true;
                             } else {
@@ -138,6 +147,8 @@ export const CreatePostCard = () => {
                                     title: "Media Uploaded",
                                     description: "Your post with media has been published successfully!",
                                     duration: 3000,
+                                    icon: <CheckCircle className="h-4 w-4" />,
+                                    variant: 'success'
                                 });
                             }
                         } catch (error) {
@@ -150,6 +161,7 @@ export const CreatePostCard = () => {
                                 description: errorMessage,
                                 variant: "destructive",
                                 duration: 5000,
+                                icon: <X className="h-4 w-4" />
                             });
                             mediaUploadFailed = true;
                         }
@@ -164,6 +176,7 @@ export const CreatePostCard = () => {
                     description: errorMessage,
                     variant: "destructive",
                     duration: 4000,
+                    icon: <X className="h-4 w-4" />
                 });
                 postUploadFailed = true;
             }
@@ -182,6 +195,7 @@ export const CreatePostCard = () => {
                 description: "Please write something before posting.",
                 variant: "destructive",
                 duration: 3000,
+                icon: <X className="h-4 w-4" />
             });
         }
     }

@@ -16,7 +16,8 @@ import {
     Clock,
     UserX,
     AlertTriangle,
-    CheckCircle
+    CheckCircle,
+    X
 } from 'lucide-react'
 import {
     updateSecuritySettings,
@@ -49,7 +50,8 @@ const SecuritySettings = () => {
                 title: "Error",
                 description: securityError.message || securityError.error || "A security error occurred",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             dispatch(clearSecurityError())
         }
@@ -73,7 +75,8 @@ const SecuritySettings = () => {
                 title: "Error",
                 description: "New passwords don't match",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             return
         }
@@ -83,7 +86,8 @@ const SecuritySettings = () => {
                 title: "Error",
                 description: "Password must be at least 8 characters long",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             return
         }
@@ -97,7 +101,9 @@ const SecuritySettings = () => {
             toast({
                 title: "Success",
                 description: "Password changed successfully",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
             setPasswordForm({
                 currentPassword: '',
@@ -115,7 +121,9 @@ const SecuritySettings = () => {
             toast({
                 title: "Success",
                 description: "Logged out from all devices",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
         } catch {
             // Error is handled by the useEffect

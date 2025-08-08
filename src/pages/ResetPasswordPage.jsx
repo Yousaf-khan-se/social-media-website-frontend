@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Hash, Eye, EyeOff } from 'lucide-react';
+import { Hash, Eye, EyeOff, X, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { clearError, clearSuccess, resetPassword } from '@/store/slices/authSlice';
 
@@ -55,6 +55,8 @@ const ResetPasswordPage = () => {
                 title: 'Reset Link Expired',
                 description: 'Your password reset link has expired. Please request a new one.',
                 variant: 'destructive',
+                duration: 3000,
+                icon: <X className="h-4 w-4" />
             });
             dispatch(clearError());
             dispatch(clearSuccess());
@@ -67,6 +69,9 @@ const ResetPasswordPage = () => {
             toast({
                 title: 'Success!',
                 description: message || 'Your password has been reset successfully. Please log in.',
+                duration: 3000,
+                variant: 'success',
+                icon: <CheckCircle className="h-4 w-4" />
             });
             dispatch(clearSuccess());
             dispatch(clearError());
@@ -81,6 +86,9 @@ const ResetPasswordPage = () => {
                 title: 'Error',
                 description: error,
                 variant: 'destructive',
+                icon: <X className="h-4 w-4" />,
+                duration: 3000
+
             });
         }
     }, [error, toast]);
@@ -134,6 +142,8 @@ const ResetPasswordPage = () => {
                 title: 'Error',
                 description: 'Passwords do not match.',
                 variant: 'destructive',
+                duration: 3000,
+                icon: <X className="h-4 w-4" />
             });
             return;
         }
@@ -142,6 +152,8 @@ const ResetPasswordPage = () => {
                 title: 'Error',
                 description: 'Invalid or missing reset OTP.',
                 variant: 'destructive',
+                duration: 3000,
+                icon: <X className="h-4 w-4" />
             });
             return;
         }

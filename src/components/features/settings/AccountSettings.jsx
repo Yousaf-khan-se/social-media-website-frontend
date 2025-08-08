@@ -6,7 +6,7 @@ import { Button } from '../../ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../ui/alert-dialog'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
-import { LogOut, Trash2, User } from 'lucide-react'
+import { CheckCircle, LogOut, Trash2, User, X } from 'lucide-react'
 import { logout, deleteAccount } from '../../../store/slices/authSlice'
 import { useToast } from '../../../hooks/use-toast'
 // import { duration } from 'zod/v4/classic/iso.cjs'
@@ -29,7 +29,9 @@ const AccountSettings = () => {
             toast({
                 title: "Logged out successfully",
                 description: "You have been securely logged out.",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
 
             navigate('/login')
@@ -38,7 +40,8 @@ const AccountSettings = () => {
                 title: "Logout failed",
                 description: "There was an error logging out. Please try again.",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
         } finally {
             setIsLoggingOut(false)
@@ -51,7 +54,8 @@ const AccountSettings = () => {
                 title: "Confirmation required",
                 description: "Please type 'DELETE' to confirm account deletion.",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             return
         }
@@ -65,7 +69,9 @@ const AccountSettings = () => {
             toast({
                 title: "Account deleted",
                 description: "Your account has been permanently deleted.",
-                duration: 5000
+                duration: 5000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
             })
 
             // Redirect to register page
@@ -75,7 +81,8 @@ const AccountSettings = () => {
                 title: "Delete account failed",
                 description: error.error || "Failed to delete account. Please try again.",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
         } finally {
             setIsDeletingAccount(false)
