@@ -42,6 +42,8 @@ const ChatPermissionRequestsDialog = ({ isOpen, onClose }) => {
                 title: "Request Approved",
                 description: "Chat has been created successfully!",
                 duration: 5000,
+                variant: "success",
+                icon: <Check className="h-4 w-4" />
             })
         } catch (err) {
             console.error('Failed to approve request:', err)
@@ -50,6 +52,7 @@ const ChatPermissionRequestsDialog = ({ isOpen, onClose }) => {
                 description: "Failed to approve request",
                 variant: "destructive",
                 duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
         }
     }
@@ -65,6 +68,8 @@ const ChatPermissionRequestsDialog = ({ isOpen, onClose }) => {
                 title: "Request Denied",
                 description: "The request has been declined.",
                 duration: 5000,
+                variant: "destructive",
+                icon: <X className="h-4 w-4" />
             })
         } catch (err) {
             console.error('Failed to deny request:', err)
@@ -72,7 +77,8 @@ const ChatPermissionRequestsDialog = ({ isOpen, onClose }) => {
                 title: "Error",
                 description: "Failed to deny request",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
         }
     }

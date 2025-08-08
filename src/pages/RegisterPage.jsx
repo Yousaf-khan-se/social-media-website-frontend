@@ -56,7 +56,9 @@ export const RegisterPage = () => {
         toast({
             title: "Success!",
             description: "Your account has been created successfully. Now Please login with your account.",
-            variant: "success"
+            duration: 3000,
+            icon: <CheckCircle className="h-4 w-4" />,
+            variant: 'success'
         });
         dispatch(clearError());
         dispatch(clearSuccess());

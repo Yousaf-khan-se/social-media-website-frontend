@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Hash, Eye, EyeOff } from 'lucide-react'
+import { Hash, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '@/hooks/use-toast'
 
 export const LoginPage = () => {
     const dispatch = useDispatch()
@@ -18,12 +19,20 @@ export const LoginPage = () => {
     })
 
     const navigate = useNavigate();
+    const { toast } = useToast();
 
     // Only redirect if initialized and authenticated
     useEffect(() => {
         if (initialized && isAuthenticated) {
             dispatch(clearError());
             dispatch(clearSuccess());
+            toast({
+                title: 'Welcome',
+                description: 'Welcome back!',
+                variant: 'success',
+                duration: 1000,
+                icon: <CheckCircle className="h-4 w-4" />
+            })
             navigate('/', { replace: true })
         }
     }, [initialized, isAuthenticated, navigate])

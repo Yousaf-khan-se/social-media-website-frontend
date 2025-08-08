@@ -12,6 +12,7 @@ import { updateNotificationSettings } from '@/store/slices/settingsSlice';
 import notificationService from '@/services/notificationService';
 import { onMessageListener, getStoredToken } from '@/services/firebase-messaging';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 // import { duration } from 'zod/v4/classic/iso.cjs';
 
 const NotificationManager = ({ children }) => {
@@ -166,6 +167,7 @@ const NotificationManager = ({ children }) => {
                                 </button>
                             ),
                             duration: 5000,
+                            icon: payload.notification?.icon || <Loader2 className="h-4 w-4 animate-spin" />,
                         });
                     }
                 }).catch((error) => {

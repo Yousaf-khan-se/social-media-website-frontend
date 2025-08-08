@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { createChat, clearLastPermissionRequestResult } from '@/store/slices/chatSlice'
 import { fetchAuthUserFollowers, fetchAuthUserFollowings, searchUsers, clearProfiles } from '@/store/slices/profileListSlice'
-import { Search, X, Users, MessageCircle } from 'lucide-react'
+import { Search, X, Users, MessageCircle, Reply } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { success } from 'zod'
 // import { duration } from 'zod/v4/classic/iso.cjs'
 
 const NewChatDialog = ({ isOpen, onClose }) => {
@@ -132,6 +133,7 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                         title: "Permission Request Sent",
                         description: lastPermissionRequestResult.message || "The user will be notified of your chat request.",
                         duration: 5000,
+                        icon: <Reply className="h-4 w-4" />,
                     })
                     // Close dialog after sending permission request
                     handleClose()
@@ -141,6 +143,8 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                         title: "Chat Created",
                         description: "You can now start messaging!",
                         duration: 5000,
+                        icon: <Reply className="h-4 w-4" />,
+                        variant: 'success'
                     })
                     // Navigate to chat or close dialog
                     handleClose()
@@ -151,14 +155,16 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                             title: "Cannot Send Message",
                             description: "This user doesn't accept messages from anyone.",
                             variant: "destructive",
-                            duration: 5000
+                            duration: 5000,
+                            icon: <X className="h-4 w-4" />
                         })
                     } else {
                         toast({
                             title: "Error",
                             description: lastPermissionRequestResult.error?.error || "Failed to create chat",
                             variant: "destructive",
-                            duration: 5000
+                            duration: 5000,
+                            icon: <X className="h-4 w-4" />
                         })
                     }
                     break
@@ -258,7 +264,8 @@ const NewChatDialog = ({ isOpen, onClose }) => {
                 title: "Group Name Required",
                 description: "Please enter a group name.",
                 variant: "destructive",
-                duration: 5000
+                duration: 5000,
+                icon: <X className="h-4 w-4" />
             })
             return
         }

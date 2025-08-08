@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ArrowLeft, UserPlus, UserMinus } from 'lucide-react'
+import { Calendar, ArrowLeft, UserPlus, UserMinus, CheckCircle, X } from 'lucide-react'
 import { getUserPosts, resetPosts } from '@/store/slices/postsSlice'
 import { fetchProfile } from '@/store/slices/profileSlice'
 import { followUser, unfollowUser } from '@/store/slices/authSlice'
@@ -65,7 +65,9 @@ export const UserProfilePage = () => {
                 setFollowersCount(prev => prev - 1)
                 toast({
                     title: "Unfollowed",
-                    description: `You unfollowed ${currentProfile.firstName} ${currentProfile.lastName}`
+                    description: `You unfollowed ${currentProfile.firstName} ${currentProfile.lastName}`,
+                    icon: <X className="h-4 w-4" />,
+                    duration: 3000
                 })
             } else {
                 await dispatch(followUser(currentProfile._id || currentProfile.id)).unwrap()
@@ -74,14 +76,18 @@ export const UserProfilePage = () => {
                 toast({
                     title: "Following",
                     description: `You are now following ${currentProfile.firstName} ${currentProfile.lastName}`,
-                    duration: 5000
+                    duration: 5000,
+                    icon: <CheckCircle className="h-4 w-4" />,
+                    variant: 'success'
                 })
             }
         } catch (error) {
             toast({
                 title: "Error",
                 description: error.error || "Failed to update follow status",
-                variant: "destructive"
+                variant: "destructive",
+                duration: 3000,
+                icon: <X className="h-4 w-4" />
             })
         } finally {
             setIsFollowLoading(false)

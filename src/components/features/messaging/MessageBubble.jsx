@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Download, Eye, Trash2, Copy, Reply, Loader2 } from 'lucide-react'
+import { Download, Eye, Trash2, Copy, Reply, Loader2, X } from 'lucide-react'
 import {
     ContextMenu,
     ContextMenuContent,
@@ -50,6 +50,7 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                 description: 'Failed to delete message. Please try again.',
                 variant: 'destructive',
                 duration: 4000,
+                icon: <Trash2 className="h-4 w-4" />
             })
         }
     }
@@ -124,6 +125,7 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                 description: `${finalFilename} has been downloaded successfully.`,
                 icon: <Download className="h-4 w-4" />,
                 duration: 4000,
+                variant: 'success',
             })
         } catch (error) {
             console.error('Download failed:', error)
@@ -144,6 +146,7 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                     description: 'Failed to download the file. Please try again or contact support.',
                     variant: 'destructive',
                     duration: 4000,
+                    icon: <X className="h-4 w-4" />
                 })
             }
         } finally {
@@ -160,7 +163,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                     title: 'Clipboard',
                     description: 'Message copied to clipboard.',
                     icon: <Copy className="h-4 w-4" />,
-                    duration: 4000
+                    duration: 4000,
+                    variant: 'success'
                 })
             } else if (message.messageType === 'image') {
                 try {
@@ -187,16 +191,18 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                             title: 'Clipboard',
                             description: 'Image copied to clipboard.',
                             icon: <Copy className="h-4 w-4" />,
-                            duration: 4000
+                            duration: 4000,
+                            variant: 'success'
                         })
                     } else {
                         // Fallback: copy image URL
                         await navigator.clipboard.writeText(message.content)
                         toast({
                             title: 'Clipboard',
-                            description: 'Image URL copied to clipboard.',
+                            description: 'Image URL copied to clipboard. (could not copy image itself.)',
                             icon: <Copy className="h-4 w-4" />,
-                            duration: 4000
+                            duration: 4000,
+                            variant: 'warning'
                         })
                     }
                 } catch (error) {
@@ -216,7 +222,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                     title: 'Clipboard',
                     description: 'Video URL copied to clipboard.',
                     icon: <Copy className="h-4 w-4" />,
-                    duration: 4000
+                    duration: 4000,
+                    variant: 'success'
                 })
             }
         } catch (error) {
@@ -229,7 +236,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                     title: 'Clipboard',
                     description: 'Content URL copied to clipboard.',
                     icon: <Copy className="h-4 w-4" />,
-                    duration: 4000
+                    duration: 4000,
+                    variant: 'success'
                 })
             } catch (fallbackError) {
                 console.error('Fallback copy also failed:', fallbackError)
@@ -237,7 +245,8 @@ const MessageBubble = ({ message, isOwn, showAvatar = true }) => {
                     title: 'Copy Failed',
                     description: 'Failed to copy to clipboard. Please try again.',
                     variant: 'destructive',
-                    duration: 4000
+                    duration: 4000,
+                    icon: <X className="h-4 w-4" />
                 })
             }
         } finally {
