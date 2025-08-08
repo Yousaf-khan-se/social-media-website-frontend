@@ -7,11 +7,11 @@ import { store } from './store/store'
 import { AuthProvider } from './components/common/AuthProvider'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <Provider store={store}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </Provider>
-  </StrictMode>,
+  //  <StrictMode>
+  <Provider store={store}>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </Provider>
+  //  </StrictMode>
 )
