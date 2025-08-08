@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { toggleLike, deletePost, updatePost, uploadPostMedia } from '@/store/slices/postsSlice'
@@ -50,8 +50,7 @@ import { cn } from '@/lib/utils'
 import {
     prepareContentForDisplay,
     isHtmlEmpty,
-    generateContentSummary,
-    prepareContentForApi
+    generateContentSummary
 } from '@/utils/editorUtils'
 
 // Constants
@@ -149,7 +148,7 @@ const PostActions = ({
 }
 
 // Enhanced Author Menu Component
-const AuthorMenu = ({ isAuthor, onEdit, onDelete, onUploadMedia }) => {
+const AuthorMenu = ({ isAuthor, onEdit, onDelete }) => {
     if (!isAuthor) return null
 
     return (
@@ -168,9 +167,6 @@ const AuthorMenu = ({ isAuthor, onEdit, onDelete, onUploadMedia }) => {
                 <DropdownMenuItem onClick={onEdit}>
                     Edit Post
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onUploadMedia}>
-                    Upload Media
-                </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={onDelete}
                     className="text-destructive focus:text-destructive"
@@ -182,78 +178,7 @@ const AuthorMenu = ({ isAuthor, onEdit, onDelete, onUploadMedia }) => {
     )
 }
 
-// Enhanced Media Upload Dialog
-const MediaUploadDialog = ({
-    isOpen,
-    onOpenChange,
-    mediaFiles,
-    onFileChange,
-    onUpload,
-    isUploading,
-    errorMsg,
-    inputRef,
-    onRemoveFile
-}) => {
-    return (
-        <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Upload Media</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Select up to {MAX_FILES} files to upload for this post (max {MAX_FILE_SIZE_MB}MB each).
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
 
-                <div className="space-y-4">
-                    <Input
-                        type="file"
-                        accept="image/*,video/*"
-                        multiple
-                        onChange={onFileChange}
-                        disabled={isUploading}
-                        ref={inputRef}
-                        className="file:mr-2 file:rounded file:border-none file:bg-accent file:text-accent-foreground"
-                    />
-
-                    {errorMsg && (
-                        <p className="text-sm text-destructive">{errorMsg}</p>
-                    )}
-
-                    {mediaFiles.length > 0 && (
-                        <div className="space-y-2">
-                            <p className="text-sm font-medium">Selected Files:</p>
-                            <div className="flex flex-wrap gap-2">
-                                {mediaFiles.map((file, idx) => (
-                                    <Badge key={idx} variant="secondary" className="gap-2">
-                                        <span className="truncate max-w-[120px]">{file.name}</span>
-                                        <button
-                                            type="button"
-                                            className="text-xs text-destructive hover:text-destructive/80"
-                                            onClick={() => onRemoveFile(idx)}
-                                            aria-label={`Remove ${file.name}`}
-                                        >
-                                            ×
-                                        </button>
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={onUpload}
-                        disabled={mediaFiles.length === 0 || isUploading}
-                    >
-                        {isUploading ? 'Uploading...' : 'Upload'}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-    )
-}
 
 // Main PostCard Component
 export const PostCard = ({ post }) => {
@@ -262,18 +187,27 @@ export const PostCard = ({ post }) => {
     const { user } = useSelector(state => state.auth)
 
     // State management
-    const [mediaFiles, setMediaFiles] = useState([])
-    const [isUploading, setIsUploading] = useState(false)
-    const [errorMsg, setErrorMsg] = useState("")
     const [isLiking, setIsLiking] = useState(false)
     const [showComments, setShowComments] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [editContent, setEditContent] = useState(post?.content || '')
     const [showEditHistory, setShowEditHistory] = useState(false)
-    const [showMediaUpload, setShowMediaUpload] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-    const inputRef = useRef(null)
+    // Edit mode media handling (similar to CreatePostCard)
+    const [editMediaFiles, setEditMediaFiles] = useState([])
+    const [editMediaUrlToFileMap, setEditMediaUrlToFileMap] = useState(new Map())
+    const [isEditUploading, setIsEditUploading] = useState(false)
+    const [editErrorMsg, setEditErrorMsg] = useState("")
+
+    // Cleanup edit media URLs on unmount
+    useEffect(() => {
+        return () => {
+            editMediaUrlToFileMap.forEach((file, url) => {
+                URL.revokeObjectURL(url)
+            })
+        }
+    }, [editMediaUrlToFileMap])
 
     // Memoized computed values
     const authorInfo = useMemo(() => {
@@ -372,93 +306,269 @@ export const PostCard = ({ post }) => {
         }
     }, [post.author, user, navigate])
 
-    const handleFileChange = useCallback((e) => {
-        const newFiles = Array.from(e.target.files)
-        const totalFiles = mediaFiles.length + newFiles.length
+    // Edit mode content change handler (similar to CreatePostCard)
+    const handleEditContentChange = useCallback((newContent) => {
+        setEditContent(newContent)
+        setEditErrorMsg("") // Clear any previous errors
 
-        if (totalFiles > MAX_FILES) {
-            setErrorMsg(`You can only upload up to ${MAX_FILES} files.`)
-            if (inputRef.current) inputRef.current.value = ""
+        // Check if any media was removed from the editor content
+        if (editMediaUrlToFileMap.size > 0) {
+            const currentUrls = new Set()
+
+            // Extract all blob URLs from the new content
+            const imgMatches = newContent.match(/src="blob:[^"]*"/g) || []
+            const videoMatches = newContent.match(/<video[^>]*src="blob:[^"]*"/g) || []
+
+            imgMatches.forEach(match => {
+                const url = match.match(/src="(blob:[^"]*)"/)?.[1]
+                if (url) currentUrls.add(url)
+            })
+
+            videoMatches.forEach(match => {
+                const url = match.match(/src="(blob:[^"]*)"/)?.[1]
+                if (url) currentUrls.add(url)
+            })
+
+            // Find URLs that were removed
+            const removedUrls = []
+            for (const url of editMediaUrlToFileMap.keys()) {
+                if (!currentUrls.has(url)) {
+                    removedUrls.push(url)
+                }
+            }
+
+            // Remove corresponding files from mediaFiles array
+            if (removedUrls.length > 0) {
+                setEditMediaFiles(prev => {
+                    const filesToRemove = removedUrls.map(url => editMediaUrlToFileMap.get(url)).filter(Boolean)
+                    return prev.filter(file => !filesToRemove.includes(file))
+                })
+
+                // Clean up URL mappings
+                setEditMediaUrlToFileMap(prev => {
+                    const newMap = new Map(prev)
+                    removedUrls.forEach(url => {
+                        URL.revokeObjectURL(url) // Clean up blob URL
+                        newMap.delete(url)
+                    })
+                    return newMap
+                })
+            }
+        }
+    }, [editMediaUrlToFileMap])
+
+    // Edit mode image upload handler
+    const handleEditImageUpload = useCallback(async (file) => {
+        if (!file) return null
+
+        const MAX_FILE_SIZE_MB = 15
+        const MAX_FILES = 10
+
+        // Validate file size
+        if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+            // You can add toast notification here if needed
+            throw new Error('File too large')
+        }
+
+        // Check if we're at the limit
+        if (editMediaFiles.length >= MAX_FILES) {
+            throw new Error('Too many files')
+        }
+
+        try {
+            // Create a local URL for preview
+            const imageUrl = URL.createObjectURL(file)
+
+            // Add file to our media files array
+            setEditMediaFiles(prev => [...prev, file])
+
+            // Track URL to file mapping
+            setEditMediaUrlToFileMap(prev => {
+                const newMap = new Map(prev)
+                newMap.set(imageUrl, file)
+                return newMap
+            })
+
+            return imageUrl
+
+        } catch (error) {
+            console.error('Image handling failed:', error)
+            throw error
+        }
+    }, [editMediaFiles.length])
+
+    // Edit mode video upload handler
+    const handleEditVideoUpload = useCallback(async (file) => {
+        if (!file) return null
+
+        const MAX_FILES = 10
+        const maxVideoSize = 50 * 1024 * 1024 // 50MB for videos
+
+        // Validate file size
+        if (file.size > maxVideoSize) {
+            throw new Error('File too large')
+        }
+
+        // Check if we're at the limit
+        if (editMediaFiles.length >= MAX_FILES) {
+            throw new Error('Too many files')
+        }
+
+        try {
+            // Create a local URL for preview
+            const videoUrl = URL.createObjectURL(file)
+
+            // Add file to our media files array
+            setEditMediaFiles(prev => [...prev, file])
+
+            // Track URL to file mapping
+            setEditMediaUrlToFileMap(prev => {
+                const newMap = new Map(prev)
+                newMap.set(videoUrl, file)
+                return newMap
+            })
+
+            return videoUrl
+
+        } catch (error) {
+            console.error('Video handling failed:', error)
+            throw error
+        }
+    }, [editMediaFiles.length])
+
+    const handleEdit = useCallback(async () => {
+        // Check if content is empty and no media files
+        if (isHtmlEmpty(editContent) && editMediaFiles.length === 0) {
+            setEditErrorMsg("Please write something or add media before saving.")
             return
         }
 
-        const validFiles = []
-        const errors = []
-
-        newFiles.forEach(file => {
-            if (file.size <= MAX_FILE_SIZE_MB * 1024 * 1024) {
-                validFiles.push(file)
-            } else {
-                errors.push(`${file.name} exceeds ${MAX_FILE_SIZE_MB}MB`)
-            }
-        })
-
-        if (errors.length > 0) {
-            setErrorMsg(errors.join(", "))
-        } else {
-            setErrorMsg("")
-        }
-
-        setMediaFiles(prev => [...prev, ...validFiles])
-    }, [mediaFiles.length])
-
-    const handleMediaUpload = useCallback(async (e) => {
-        e.preventDefault();
-        if (mediaFiles.length === 0) return
-
-        setErrorMsg("")
-        setIsUploading(true)
-
-        const formData = new FormData()
-        mediaFiles.forEach(file => formData.append('media', file))
+        let postUpdated = false
+        let mediaUploaded = false
 
         try {
-            await dispatch(uploadPostMedia({ id: post._id || post.id, media: formData })).unwrap();
-            setMediaFiles([])
-            setShowMediaUpload(false)
-        } catch (err) {
-            setErrorMsg("Media upload failed. Please try again.", err)
+            setIsEditUploading(true)
+
+            // For editing, we need to handle the content differently
+            // The editContent contains actual media URLs (from existing media) and blob URLs (from new media)
+            // We need to convert back to the stored format with placeholders for existing media
+            // and add new placeholders for new media files
+
+            let contentToSave = editContent
+
+            // First, convert existing media URLs back to placeholders
+            if (Array.isArray(post.media) && post.media.length > 0) {
+                post.media.forEach((mediaObj, index) => {
+                    if (mediaObj && mediaObj.secure_url) {
+                        const urlRegex = new RegExp(`src="${mediaObj.secure_url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'gi')
+                        contentToSave = contentToSave.replace(urlRegex, `data-media-placeholder="${index}"`)
+                        // Also remove src attribute to avoid duplication
+                        contentToSave = contentToSave.replace(new RegExp(`<(img|video)([^>]*?)data-media-placeholder="${index}"([^>]*?)src="[^"]*"([^>]*?)>`, 'gi'),
+                            `<$1$2data-media-placeholder="${index}"$3$4>`)
+                    }
+                })
+            }
+
+            // Then, if there are new media files (with blob URLs), replace them with placeholders
+            if (editMediaFiles.length > 0) {
+                // Process the content to replace blob URLs with placeholders starting after existing media count
+                const existingMediaCount = Array.isArray(post.media) ? post.media.length : 0
+                let newMediaIndex = existingMediaCount
+
+                contentToSave = contentToSave.replace(
+                    /<(img|video)([^>]*?)src="blob:[^"]*"([^>]*?)>/gi,
+                    (match, tagName, beforeSrc, afterSrc) => {
+                        const placeholder = `data-media-placeholder="${newMediaIndex}"`
+                        newMediaIndex++
+                        const cleanBeforeSrc = beforeSrc.replace(/\s*src="[^"]*"\s*/g, ' ')
+                        const cleanAfterSrc = afterSrc.replace(/\s*src="[^"]*"\s*/g, ' ')
+                        return `<${tagName}${cleanBeforeSrc}${placeholder}${cleanAfterSrc}>`
+                    }
+                )
+            }
+
+            // Step 1: Update the post content
+            await dispatch(updatePost({
+                id: post._id || post.id,
+                postData: {
+                    content: contentToSave,
+                    isEdited: true,
+                    editHistory: [
+                        ...(post.editHistory || []),
+                        { content: contentToSave, editedAt: new Date().toISOString() }
+                    ]
+                }
+            })).unwrap()
+
+            postUpdated = true
+
+            // Step 2: Upload new media files if any
+            if (editMediaFiles.length > 0) {
+                const formData = new FormData()
+                editMediaFiles.forEach(file => {
+                    formData.append('media', file)
+                })
+
+                await dispatch(uploadPostMedia({
+                    id: post._id || post.id,
+                    media: formData
+                })).unwrap()
+
+                mediaUploaded = true
+            }
+
+            // Reset edit state on success
+            setIsEditing(false)
+            setEditContent(post.content || '')
+            setEditMediaFiles([])
+            setEditErrorMsg('')
+
+            // Clean up all blob URLs and mappings
+            editMediaUrlToFileMap.forEach((file, url) => {
+                URL.revokeObjectURL(url)
+            })
+            setEditMediaUrlToFileMap(new Map())
+
+        } catch (error) {
+            console.error('Post update/upload failed:', error)
+
+            let errorMessage = "Failed to update post. Please try again."
+
+            if (postUpdated && !mediaUploaded && editMediaFiles.length > 0) {
+                errorMessage = "Post updated but new media upload failed. Please try uploading media separately."
+            } else if (!postUpdated) {
+                errorMessage = "Failed to update post. Please try again."
+            }
+
+            setEditErrorMsg(errorMessage)
+        } finally {
+            setIsEditUploading(false)
         }
+    }, [dispatch, editContent, editMediaFiles, editMediaUrlToFileMap, post._id, post.id, post.editHistory, post.content, post.media])
 
-        setIsUploading(false);
-    }, [dispatch, mediaFiles, post._id, post.id])
-
-    const handleRemoveFile = useCallback((index) => {
-        setMediaFiles(prev => {
-            const updated = prev.filter((_, i) => i !== index)
-            if (inputRef.current) {
-                const dt = new DataTransfer()
-                updated.forEach(f => dt.items.add(f))
-                inputRef.current.files = dt.files
-            }
-            return updated
-        })
-    }, [])
-
-    const handleEdit = useCallback(async () => {
-        if (isHtmlEmpty(editContent)) return
-
-        // For edit, we don't have new media files, so pass empty array
-        const sanitizedContent = prepareContentForApi(editContent, [])
-
-        setIsEditing(false)
-        await dispatch(updatePost({
-            id: post._id || post.id,
-            postData: {
-                content: sanitizedContent,
-                isEdited: true,
-                editHistory: [
-                    ...(post.editHistory || []),
-                    { content: sanitizedContent, editedAt: new Date().toISOString() }
-                ]
-            }
-        })).unwrap();
-    }, [dispatch, editContent, post._id, post.id, post.editHistory])
+    // Initialize edit mode with proper content including existing media
+    const initializeEditMode = useCallback(() => {
+        setIsEditing(true)
+        // Use the display version of content which includes the actual media URLs
+        const displayContent = prepareContentForDisplay(post.content, post.media)
+        setEditContent(displayContent)
+        setEditMediaFiles([])
+        setEditErrorMsg('')
+        setEditMediaUrlToFileMap(new Map())
+    }, [post.content, post.media])
 
     const handleCancelEdit = useCallback(() => {
         setIsEditing(false)
         setEditContent(post.content || '')
-    }, [post.content])
+        setEditMediaFiles([])
+        setEditErrorMsg('')
+
+        // Clean up all blob URLs and mappings
+        editMediaUrlToFileMap.forEach((file, url) => {
+            URL.revokeObjectURL(url)
+        })
+        setEditMediaUrlToFileMap(new Map())
+    }, [post.content, editMediaUrlToFileMap])
 
     // Early return for invalid post
     if (!post) {
@@ -514,9 +624,8 @@ export const PostCard = ({ post }) => {
                             </div>
                             <AuthorMenu
                                 isAuthor={isAuthor}
-                                onEdit={() => setIsEditing(true)}
+                                onEdit={initializeEditMode}
                                 onDelete={() => setShowDeleteConfirm(true)}
-                                onUploadMedia={() => setShowMediaUpload(true)}
                             />
                         </div>
 
@@ -539,24 +648,71 @@ export const PostCard = ({ post }) => {
 
                         {/* Content */}
                         {isEditing ? (
-                            <div className="mt-3 space-y-2">
+                            <div className="mt-3 space-y-4">
                                 <TiptapEditor
                                     content={editContent}
-                                    onChange={setEditContent}
+                                    onChange={handleEditContentChange}
                                     placeholder="What's on your mind?"
+                                    onImageUpload={handleEditImageUpload}
+                                    onVideoUpload={handleEditVideoUpload}
                                     className="w-full"
                                     maxHeight="300px"
                                     minHeight="120px"
                                 />
+
+                                {/* Error Message */}
+                                {editErrorMsg && (
+                                    <div className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">
+                                        {editErrorMsg}
+                                    </div>
+                                )}
+
+                                {/* Media Files Display */}
+                                {editMediaFiles.length > 0 && (
+                                    <div className="bg-muted/50 p-3 rounded-md">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-medium">Media Files ({editMediaFiles.length}/10)</span>
+                                            <span className="text-xs text-muted-foreground">Select and delete in editor to remove</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {editMediaFiles.map((file, index) => (
+                                                <div key={index} className="flex items-center gap-2 bg-background border rounded-md p-2">
+                                                    <span className="text-xs">
+                                                        {file.type.startsWith('image/') ? '🖼️' : '🎥'}
+                                                    </span>
+                                                    <span className="text-xs font-medium truncate max-w-[100px]">
+                                                        {file.name}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        ({(file.size / (1024 * 1024)).toFixed(1)}MB)
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">
-                                        {generateContentSummary(editContent).wordCount} words
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground">
+                                            {generateContentSummary(editContent).wordCount} words
+                                            {editMediaFiles.length > 0 && `, ${editMediaFiles.length} media file${editMediaFiles.length > 1 ? 's' : ''}`}
+                                        </span>
+                                        {isEditUploading && (
+                                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                <span>Uploading...</span>
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="flex gap-2">
-                                        <Button size="sm" onClick={handleEdit} disabled={isHtmlEmpty(editContent)}>
-                                            Save
+                                        <Button
+                                            size="sm"
+                                            onClick={handleEdit}
+                                            disabled={isEditUploading || (isHtmlEmpty(editContent) && editMediaFiles.length === 0)}
+                                        >
+                                            {isEditUploading ? 'Saving...' : 'Save'}
                                         </Button>
-                                        <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                        <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={isEditUploading}>
                                             Cancel
                                         </Button>
                                     </div>
@@ -710,18 +866,7 @@ export const PostCard = ({ post }) => {
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Media Upload Dialog */}
-            <MediaUploadDialog
-                isOpen={showMediaUpload}
-                onOpenChange={setShowMediaUpload}
-                mediaFiles={mediaFiles}
-                onFileChange={handleFileChange}
-                onUpload={handleMediaUpload}
-                isUploading={isUploading}
-                errorMsg={errorMsg}
-                inputRef={inputRef}
-                onRemoveFile={handleRemoveFile}
-            />
+
         </Card>
     )
 }
