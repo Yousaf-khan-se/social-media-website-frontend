@@ -1,289 +1,463 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { createPost, uploadPostMedia } from '@/store/slices/postsSlice'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
-import { useForm, FormProvider } from 'react-hook-form'
 import { useToast } from '@/hooks/use-toast'
-import { CheckCircle, X } from 'lucide-react'
+import { CheckCircle, X, Send, Loader2 } from 'lucide-react'
+import TiptapEditor from '@/components/editor/TiptapEditor'
+import {
+    validateContent,
+    prepareContentForApi,
+    generateContentSummary,
+    isHtmlEmpty
+} from '@/utils/editorUtils'
 
 export const CreatePostCard = () => {
     const dispatch = useDispatch()
     const { user } = useSelector(state => state.auth)
     const { isLoading } = useSelector(state => state.posts)
-    const [content, setContent] = useState('')
-    const [mediaFiles, setMediaFiles] = useState([])
+    const [content, setContent] = useState('<p></p>')
     const [isUploading, setIsUploading] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
+    const [mediaFiles, setMediaFiles] = useState([]) // Store actual files for upload
+    const [mediaUrlToFileMap, setMediaUrlToFileMap] = useState(new Map()) // Track URL to file mapping
+
     const MAX_FILES = 10
     const MAX_FILE_SIZE_MB = 15
+    const MAX_CONTENT_LENGTH = 10000
 
-    const { toast } = useToast();
+    const { toast } = useToast()
 
-    const inputRef = useRef(null)
-    const methods = useForm()
+    // Cleanup blob URLs on unmount
+    useEffect(() => {
+        return () => {
+            mediaUrlToFileMap.forEach((file, url) => {
+                URL.revokeObjectURL(url)
+            })
+        }
+    }, [mediaUrlToFileMap])
 
-    const handleFileChange = (e) => {
-        const newFiles = Array.from(e.target.files)
-        const totalFiles = mediaFiles.length + newFiles.length
+    // Handle content change from editor
+    const handleContentChange = useCallback((newContent) => {
+        setContent(newContent)
+        setErrorMsg("") // Clear any previous errors
 
-        let validFiles = []
-        let errors = []
+        // Check if any media was removed from the editor content
+        if (mediaUrlToFileMap.size > 0) {
+            const currentUrls = new Set()
 
-        if (totalFiles > MAX_FILES) {
-            const errorMessage = `You can only upload up to ${MAX_FILES} files.`;
-            setErrorMsg(errorMessage);
+            // Extract all blob URLs from the new content
+            const imgMatches = newContent.match(/src="blob:[^"]*"/g) || []
+            const videoMatches = newContent.match(/<video[^>]*src="blob:[^"]*"/g) || []
+
+            imgMatches.forEach(match => {
+                const url = match.match(/src="(blob:[^"]*)"/)?.[1]
+                if (url) currentUrls.add(url)
+            })
+
+            videoMatches.forEach(match => {
+                const url = match.match(/src="(blob:[^"]*)"/)?.[1]
+                if (url) currentUrls.add(url)
+            })
+
+            // Find URLs that were removed
+            const removedUrls = []
+            for (const url of mediaUrlToFileMap.keys()) {
+                if (!currentUrls.has(url)) {
+                    removedUrls.push(url)
+                }
+            }
+
+            // Remove corresponding files from mediaFiles array
+            if (removedUrls.length > 0) {
+                setMediaFiles(prev => {
+                    const filesToRemove = removedUrls.map(url => mediaUrlToFileMap.get(url)).filter(Boolean)
+                    return prev.filter(file => !filesToRemove.includes(file))
+                })
+
+                // Clean up URL mappings
+                setMediaUrlToFileMap(prev => {
+                    const newMap = new Map(prev)
+                    removedUrls.forEach(url => {
+                        URL.revokeObjectURL(url) // Clean up blob URL
+                        newMap.delete(url)
+                    })
+                    return newMap
+                })
+            }
+        }
+    }, [mediaUrlToFileMap])
+
+    // Handle image upload within the editor
+    const handleImageUpload = useCallback(async (file) => {
+        if (!file) return null
+
+        // Validate file size
+        if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
             toast({
-                title: "Too Many Files",
-                description: errorMessage,
+                title: "File Too Large",
+                description: `Image must be smaller than ${MAX_FILE_SIZE_MB}MB`,
                 variant: "destructive",
                 duration: 4000,
                 icon: <X className="h-4 w-4" />
-            });
-            inputRef.current.value = "" // reset input
+            })
+            throw new Error('File too large')
+        }
+
+        // Check if we're at the limit
+        if (mediaFiles.length >= MAX_FILES) {
+            toast({
+                title: "Too Many Files",
+                description: `You can only upload up to ${MAX_FILES} files per post`,
+                variant: "destructive",
+                duration: 4000,
+                icon: <X className="h-4 w-4" />
+            })
+            throw new Error('Too many files')
+        }
+
+        try {
+            // Create a local URL for preview
+            const imageUrl = URL.createObjectURL(file)
+
+            // Add file to our media files array
+            setMediaFiles(prev => [...prev, file])
+
+            // Track URL to file mapping
+            setMediaUrlToFileMap(prev => {
+                const newMap = new Map(prev)
+                newMap.set(imageUrl, file)
+                return newMap
+            })
+
+            toast({
+                title: "Image Added",
+                description: "Image added to your post (will be uploaded when post is created)",
+                duration: 2000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
+            })
+
+            return imageUrl
+
+        } catch (error) {
+            console.error('Image handling failed:', error)
+            toast({
+                title: "Upload Failed",
+                description: "Failed to add image. Please try again.",
+                variant: "destructive",
+                duration: 4000,
+                icon: <X className="h-4 w-4" />
+            })
+            throw error
+        }
+    }, [toast, MAX_FILE_SIZE_MB, mediaFiles.length])
+
+    // Handle video upload within the editor
+    const handleVideoUpload = useCallback(async (file) => {
+        if (!file) return null
+
+        // Validate file size (videos can be larger)
+        const maxVideoSize = 50 * 1024 * 1024 // 50MB for videos
+        if (file.size > maxVideoSize) {
+            toast({
+                title: "File Too Large",
+                description: "Video must be smaller than 50MB",
+                variant: "destructive",
+                duration: 4000,
+                icon: <X className="h-4 w-4" />
+            })
+            throw new Error('File too large')
+        }
+
+        // Check if we're at the limit
+        if (mediaFiles.length >= MAX_FILES) {
+            toast({
+                title: "Too Many Files",
+                description: `You can only upload up to ${MAX_FILES} files per post`,
+                variant: "destructive",
+                duration: 4000,
+                icon: <X className="h-4 w-4" />
+            })
+            throw new Error('Too many files')
+        }
+
+        try {
+            // Create a local URL for preview
+            const videoUrl = URL.createObjectURL(file)
+
+            // Add file to our media files array
+            setMediaFiles(prev => [...prev, file])
+
+            // Track URL to file mapping
+            setMediaUrlToFileMap(prev => {
+                const newMap = new Map(prev)
+                newMap.set(videoUrl, file)
+                return newMap
+            })
+
+            toast({
+                title: "Video Added",
+                description: "Video added to your post (will be uploaded when post is created)",
+                duration: 2000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
+            })
+
+            return videoUrl
+
+        } catch (error) {
+            console.error('Video handling failed:', error)
+            toast({
+                title: "Upload Failed",
+                description: "Failed to add video. Please try again.",
+                variant: "destructive",
+                duration: 4000,
+                icon: <X className="h-4 w-4" />
+            })
+            throw error
+        }
+    }, [toast, mediaFiles.length])
+
+    // Note: Media removal is handled directly in the editor
+    // Users can select and delete media elements naturally within the editor content
+
+    // Handle post submission
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+
+        // Prevent double submission
+        if (isLoading || isUploading) return
+
+        // Check if content is empty and no media files
+        if (isHtmlEmpty(content) && mediaFiles.length === 0) {
+            const errorMessage = "Please write something or add media before posting."
+            setErrorMsg(errorMessage)
+            toast({
+                title: "Empty Post",
+                description: errorMessage,
+                variant: "destructive",
+                duration: 3000,
+                icon: <X className="h-4 w-4" />
+            })
             return
         }
 
-        newFiles.forEach(file => {
-            if (file.size <= MAX_FILE_SIZE_MB * 1024 * 1024) {
-                validFiles.push(file)
-            } else {
-                errors.push(`${file.name} exceeds 15MB`)
-            }
-        })
+        // Validate content if it exists
+        if (!isHtmlEmpty(content)) {
+            const validation = validateContent(content, {
+                maxLength: MAX_CONTENT_LENGTH,
+                minLength: 1,
+                requireText: false // Allow media-only posts
+            })
 
-        if (errors.length > 0) {
-            const errorMessage = errors.join("\n");
-            setErrorMsg(errorMessage);
-            toast({
-                title: "File Size Error",
-                description: `Some files exceed the ${MAX_FILE_SIZE_MB}MB limit and were not added.`,
-                variant: "destructive",
-                duration: 4000,
-                icon: <X className="h-4 w-4" />
-            });
-        } else {
-            setErrorMsg("")
-        }
-
-        setMediaFiles(prev => {
-            const updated = [...prev, ...validFiles];
-            // Show success toast for added files
-            if (validFiles.length > 0) {
+            if (!validation.isValid) {
+                const errorMessage = validation.errors.join(', ')
+                setErrorMsg(errorMessage)
                 toast({
-                    title: "Files Added",
-                    description: `${validFiles.length} file${validFiles.length > 1 ? 's' : ''} added successfully.`,
-                    duration: 2000,
-                    icon: <CheckCircle className="h-4 w-4" />,
-                    variant: 'success'
-                });
-            }
-            return updated;
-        });
-    }
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setErrorMsg(""); // Clear previous errors
-
-        if (content.trim()) {
-            let postUploadFailed = false;
-            let mediaUploadFailed = false;
-
-            // Try to create the post
-            try {
-                const resultAction = await dispatch(createPost({ content }));
-                const post = resultAction.payload?.post || resultAction.payload?.data;
-
-                if (!post) {
-                    const errorMessage = "Failed to create post. Please try again.";
-                    setErrorMsg(errorMessage);
-                    toast({
-                        title: "Post Creation Failed",
-                        description: errorMessage,
-                        variant: "destructive",
-                        duration: 4000,
-                        icon: <X className="h-4 w-4" />
-                    });
-                    postUploadFailed = true;
-                } else {
-                    // Show success message for post creation
-                    const successMessage = mediaFiles.length > 0 ? "Post created! Uploading media..." : "Post created successfully!";
-                    toast({
-                        title: "Success",
-                        description: successMessage,
-                        duration: 3000,
-                        icon: <CheckCircle className="h-4 w-4" />,
-                        variant: 'success'
-                    });
-
-                    // If post created, try to upload media
-                    if (mediaFiles.length > 0) {
-                        setIsUploading(true);
-                        try {
-                            const formData = new FormData();
-                            mediaFiles.forEach(file => formData.append('media', file));
-                            const mediaResult = await dispatch(uploadPostMedia({ id: post._id || post.id, media: formData })).unwrap();
-                            setIsUploading(false);
-
-                            if (!mediaResult.success) {
-                                const errorMessage = "Post created, but media upload failed. Please try uploading media again.";
-                                setErrorMsg(errorMessage);
-                                toast({
-                                    title: "Media Upload Failed",
-                                    description: errorMessage,
-                                    variant: "destructive",
-                                    duration: 5000,
-                                    icon: <X className="h-4 w-4" />
-                                });
-                                mediaUploadFailed = true;
-                            } else {
-                                // Show success message for media upload
-                                toast({
-                                    title: "Media Uploaded",
-                                    description: "Your post with media has been published successfully!",
-                                    duration: 3000,
-                                    icon: <CheckCircle className="h-4 w-4" />,
-                                    variant: 'success'
-                                });
-                            }
-                        } catch (error) {
-                            setIsUploading(false);
-                            console.error('Media upload failed:', error);
-                            const errorMessage = "Post created, but media upload failed. Please try uploading media again.";
-                            setErrorMsg(errorMessage);
-                            toast({
-                                title: "Media Upload Failed",
-                                description: errorMessage,
-                                variant: "destructive",
-                                duration: 5000,
-                                icon: <X className="h-4 w-4" />
-                            });
-                            mediaUploadFailed = true;
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Post creation failed:', error);
-                const errorMessage = "Failed to create post. Please try again.";
-                setErrorMsg(errorMessage);
-                toast({
-                    title: "Post Creation Failed",
+                    title: "Invalid Content",
                     description: errorMessage,
                     variant: "destructive",
                     duration: 4000,
                     icon: <X className="h-4 w-4" />
-                });
-                postUploadFailed = true;
+                })
+                return
+            }
+        }
+
+        let postCreated = false
+        let mediaUploaded = false
+
+        try {
+            setIsUploading(true)
+
+            // Step 1: Create the post with media placeholders
+            const sanitizedContent = prepareContentForApi(content, mediaFiles)
+            const postResponse = await dispatch(createPost({
+                content: sanitizedContent || '<p></p>' // Provide minimal content for media-only posts
+            })).unwrap()
+
+            postCreated = true
+            const postId = postResponse.post._id || postResponse.post.id
+
+            // Step 2: Upload media files if any
+            if (mediaFiles.length > 0) {
+                const formData = new FormData()
+                mediaFiles.forEach(file => {
+                    formData.append('media', file)
+                })
+
+                await dispatch(uploadPostMedia({
+                    id: postId,
+                    media: formData
+                })).unwrap()
+
+                mediaUploaded = true
             }
 
-            // Reset form only if both succeeded
-            if (!postUploadFailed && !mediaUploadFailed) {
-                setContent('');
-                setMediaFiles([]);
-                setErrorMsg('');
-                if (inputRef.current) inputRef.current.value = '';
-            }
-        } else {
-            // Show toast for empty post
+            // Reset form on success
+            setContent('<p></p>')
+            setMediaFiles([])
+            setErrorMsg('')
+
+            // Clean up all blob URLs and mappings
+            mediaUrlToFileMap.forEach((file, url) => {
+                URL.revokeObjectURL(url)
+            })
+            setMediaUrlToFileMap(new Map())
+
+            // Show success message
             toast({
-                title: "Empty Post",
-                description: "Please write something before posting.",
-                variant: "destructive",
+                title: "Post Created",
+                description: `Your post has been shared successfully!${mediaFiles.length > 0 ? ` with ${mediaFiles.length} media file${mediaFiles.length > 1 ? 's' : ''}` : ''}`,
                 duration: 3000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
+            })
+
+        } catch (error) {
+            console.error('Post creation/upload failed:', error)
+
+            let errorMessage = "Failed to create post. Please try again."
+
+            if (postCreated && !mediaUploaded) {
+                errorMessage = "Post created but media upload failed. Please try uploading media separately."
+            } else if (!postCreated) {
+                errorMessage = "Failed to create post. Please try again."
+            }
+
+            setErrorMsg(errorMessage)
+            toast({
+                title: "Post Creation Failed",
+                description: errorMessage,
+                variant: "destructive",
+                duration: 4000,
                 icon: <X className="h-4 w-4" />
-            });
+            })
+        } finally {
+            setIsUploading(false)
         }
     }
 
     if (!user) return null
 
+    // Generate content summary for display
+    const contentSummary = generateContentSummary(content)
+    const isContentEmpty = isHtmlEmpty(content)
+    const isFormDisabled = isLoading || isUploading
+    const hasContent = !isContentEmpty || mediaFiles.length > 0
+
     return (
         <Card>
-            <CardContent className="p-2 sm:p-4">
-                <FormProvider {...methods}>
-                    <form onSubmit={handleSubmit} className="space-y-2">
-                        <div className="flex items-start gap-3 sm:gap-4">
-                            <Avatar className="h-9 w-9 sm:h-10 sm:w-10 mt-1">
-                                <AvatarImage src={user.profilePicture} alt={user.name} />
-                                <AvatarFallback>{user.firstName?.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 flex flex-col gap-2">
-                                <Input
-                                    as="textarea"
-                                    value={content}
-                                    onChange={e => setContent(e.target.value)}
-                                    placeholder="What's happening?"
-                                    className="min-h-[60px] sm:min-h-[120px] text-base sm:text-lg resize-none border-0 outline-none bg-transparent placeholder:text-muted-foreground"
-                                    disabled={isLoading || isUploading}
-                                />
+            <CardContent className="p-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* User Avatar and Editor */}
+                    <div className="flex items-start gap-3">
+                        <Avatar className="h-10 w-10 mt-2">
+                            <AvatarImage src={user.profilePicture} alt={user.name} />
+                            <AvatarFallback>{user.firstName?.charAt(0)}</AvatarFallback>
+                        </Avatar>
 
-                                <FormField
-                                    name="media-upload"
-                                    control={methods.control}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    type="file"
-                                                    accept="image/*,video/*"
-                                                    multiple
-                                                    onChange={handleFileChange}
-                                                    disabled={isUploading}
-                                                    ref={inputRef}
-                                                    className="w-auto text-sm file:mr-2 file:rounded file:border-none file:bg-accent file:text-accent-foreground"
-                                                />
-                                            </FormControl>
-                                            {errorMsg && <FormMessage>{errorMsg}</FormMessage>}
-                                        </FormItem>
-                                    )}
-                                />
+                        <div className="flex-1">
+                            {/* Rich Text Editor */}
+                            <TiptapEditor
+                                content={content}
+                                onChange={handleContentChange}
+                                placeholder="What's on your mind?"
+                                onImageUpload={handleImageUpload}
+                                onVideoUpload={handleVideoUpload}
+                                className="w-full"
+                                maxHeight="400px"
+                                minHeight="120px"
+                            />
+                        </div>
+                    </div>
 
-                                {mediaFiles.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                        {mediaFiles.map((file, idx) => (
-                                            <Badge key={idx} variant="secondary" className="truncate max-w-fit flex items-center gap-2">
-                                                {file.name}
-                                                <button
-                                                    type="button"
-                                                    className="ml-2 text-xs text-red-500 hover:text-red-700"
-                                                    onClick={() => {
-                                                        // Remove file from state
-                                                        setMediaFiles(prev => {
-                                                            const updated = prev.filter((_, i) => i !== idx);
-                                                            // Update input field's FileList
-                                                            if (inputRef.current) {
-                                                                const dt = new window.DataTransfer();
-                                                                updated.forEach(f => dt.items.add(f));
-                                                                inputRef.current.files = dt.files;
-                                                            }
-                                                            return updated;
-                                                        });
-                                                    }}
-                                                    aria-label={`Remove ${file.name}`}
-                                                >
-                                                    &times;
-                                                </button>
-                                            </Badge>
-                                        ))}
+                    {/* Error Message */}
+                    {errorMsg && (
+                        <div className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">
+                            {errorMsg}
+                        </div>
+                    )}
+
+                    {/* Media Files Display */}
+                    {mediaFiles.length > 0 && (
+                        <div className="bg-muted/50 p-3 rounded-md">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium">Media Files ({mediaFiles.length}/{MAX_FILES})</span>
+                                <span className="text-xs text-muted-foreground">Select and delete in editor to remove</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {mediaFiles.map((file, index) => (
+                                    <div key={index} className="flex items-center gap-2 bg-background border rounded-md p-2">
+                                        <span className="text-xs">
+                                            {file.type.startsWith('image/') ? '🖼️' : '🎥'}
+                                        </span>
+                                        <span className="text-xs font-medium truncate max-w-[100px]">
+                                            {file.name}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            ({(file.size / (1024 * 1024)).toFixed(1)}MB)
+                                        </span>
                                     </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Content Summary */}
+                    {hasContent && (
+                        <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
+                            <div className="flex items-center justify-between">
+                                <span>
+                                    {contentSummary.wordCount} words
+                                    {mediaFiles.length > 0 && `, ${mediaFiles.length} media file${mediaFiles.length > 1 ? 's' : ''}`}
+                                    {contentSummary.mentions.length > 0 && `, ${contentSummary.mentions.length} mention${contentSummary.mentions.length > 1 ? 's' : ''}`}
+                                </span>
+                                {content.length > MAX_CONTENT_LENGTH * 0.8 && (
+                                    <span className={content.length > MAX_CONTENT_LENGTH ? 'text-destructive' : 'text-warning'}>
+                                        {content.length}/{MAX_CONTENT_LENGTH}
+                                    </span>
                                 )}
                             </div>
                         </div>
+                    )}
 
-                        <div className="flex justify-end mt-2">
-                            <Button type="submit" size="sm" className="w-full sm:w-auto" disabled={isUploading}>
-                                {isUploading ? 'Uploading...' : isLoading ? 'Posting...' : 'Post'}
-                            </Button>
+                    {/* Submit Button */}
+                    <div className="flex justify-between items-center pt-2">
+                        <div className="flex items-center gap-2">
+                            {isUploading && (
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Uploading media...
+                                </div>
+                            )}
                         </div>
-                    </form>
-                </FormProvider>
+
+                        <Button
+                            type="submit"
+                            disabled={isFormDisabled || !hasContent}
+                            className="ml-auto"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Posting...
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Post
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </form>
             </CardContent>
         </Card>
     )
 }
+
+export default CreatePostCard

@@ -13,7 +13,7 @@ export const Layout = ({ className }) => {
             </div>
             {/* Main content: full width on mobile, flex-1 on desktop */}
             <main className="flex-1 w-full max-w-full md:overflow-hidden md:w-auto">
-                <div className="h-full min-h-screen md:min-h-0 px-2 sm:px-4 md:px-8">
+                <div className="h-full min-h-screen md:min-h-0 px-2 sm:px-4 md:px-8 pb-16 md:pb-0">
                     <Outlet />
                 </div>
             </main>

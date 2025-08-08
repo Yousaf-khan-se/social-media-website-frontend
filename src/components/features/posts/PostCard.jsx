@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { CommentCard, AddCommentForm } from './CommentCard'
+import TiptapEditor from '@/components/editor/TiptapEditor'
 import {
     Heart,
     MessageCircle,
@@ -46,6 +47,12 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from '@/lib/utils'
+import {
+    prepareContentForDisplay,
+    isHtmlEmpty,
+    generateContentSummary,
+    prepareContentForApi
+} from '@/utils/editorUtils'
 
 // Constants
 const MAX_FILES = 10
@@ -320,9 +327,36 @@ export const PostCard = ({ post }) => {
         }
     }, [dispatch, post._id, post.id, isLiking])
 
-    const handleDelete = useCallback(() => {
-        dispatch(deletePost(post._id || post.id))
-        setShowDeleteConfirm(false)
+    const handleDelete = useCallback(async () => {
+        try {
+            const postId = post._id || post.id
+            if (!postId) {
+                console.error('No post ID found for deletion')
+                return
+            }
+
+            console.log('Deleting post with ID:', postId)
+            await dispatch(deletePost(postId)).unwrap()
+            setShowDeleteConfirm(false)
+
+            // Optional: Show success toast
+            // toast({
+            //     title: "Post Deleted",
+            //     description: "Your post has been deleted successfully.",
+            //     duration: 2000,
+            // })
+        } catch (error) {
+            console.error('Failed to delete post:', error)
+            setShowDeleteConfirm(false)
+
+            // Optional: Show error toast
+            // toast({
+            //     title: "Delete Failed",
+            //     description: "Failed to delete post. Please try again.",
+            //     variant: "destructive",
+            //     duration: 4000,
+            // })
+        }
     }, [dispatch, post._id, post.id])
 
     const handleProfileClick = useCallback(() => {
@@ -402,17 +436,20 @@ export const PostCard = ({ post }) => {
     }, [])
 
     const handleEdit = useCallback(async () => {
-        if (!editContent.trim()) return
+        if (isHtmlEmpty(editContent)) return
+
+        // For edit, we don't have new media files, so pass empty array
+        const sanitizedContent = prepareContentForApi(editContent, [])
 
         setIsEditing(false)
         await dispatch(updatePost({
             id: post._id || post.id,
             postData: {
-                content: editContent,
+                content: sanitizedContent,
                 isEdited: true,
                 editHistory: [
                     ...(post.editHistory || []),
-                    { content: editContent, editedAt: new Date().toISOString() }
+                    { content: sanitizedContent, editedAt: new Date().toISOString() }
                 ]
             }
         })).unwrap();
@@ -503,20 +540,20 @@ export const PostCard = ({ post }) => {
                         {/* Content */}
                         {isEditing ? (
                             <div className="mt-3 space-y-2">
-                                <textarea
-                                    className="w-full border rounded-md p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                                    value={editContent}
-                                    onChange={e => setEditContent(e.target.value)}
-                                    rows={3}
-                                    maxLength={2000}
+                                <TiptapEditor
+                                    content={editContent}
+                                    onChange={setEditContent}
                                     placeholder="What's on your mind?"
+                                    className="w-full"
+                                    maxHeight="300px"
+                                    minHeight="120px"
                                 />
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs text-muted-foreground">
-                                        {editContent.length}/2000
+                                        {generateContentSummary(editContent).wordCount} words
                                     </span>
                                     <div className="flex gap-2">
-                                        <Button size="sm" onClick={handleEdit} disabled={!editContent.trim()}>
+                                        <Button size="sm" onClick={handleEdit} disabled={isHtmlEmpty(editContent)}>
                                             Save
                                         </Button>
                                         <Button size="sm" variant="outline" onClick={handleCancelEdit}>
@@ -527,9 +564,12 @@ export const PostCard = ({ post }) => {
                             </div>
                         ) : (
                             <>
-                                <div className="mt-2 text-sm break-words whitespace-pre-line">
-                                    {post.content}
-                                </div>
+                                <div
+                                    className="mt-2 text-sm break-words prose prose-sm max-w-none"
+                                    dangerouslySetInnerHTML={{
+                                        __html: prepareContentForDisplay(post.content, post.media)
+                                    }}
+                                />
 
                                 {/* Location */}
                                 {post.location && (
@@ -550,57 +590,62 @@ export const PostCard = ({ post }) => {
                                     </div>
                                 )}
 
-                                {/* Media Carousel */}
-                                {Array.isArray(post.media) && post.media.length > 0 && (
-                                    <div className="mt-3">
-                                        <Carousel className="w-full max-w-md mx-auto">
-                                            <CarouselContent>
-                                                {post.media.map((mediaObj, idx) => {
-                                                    const url = mediaObj.secure_url
-                                                    return (
-                                                        <CarouselItem key={idx}>
-                                                            <div className="p-1">
-                                                                <Card className="border-0 shadow-none">
-                                                                    <CardContent className="flex aspect-square items-center justify-center p-2">
-                                                                        {isVideoFile(url) ? (
-                                                                            <video
-                                                                                src={url}
-                                                                                controls
-                                                                                className="object-cover w-full h-full rounded-md"
-                                                                                style={{ maxHeight: '320px' }}
-                                                                                preload="metadata"
-                                                                            />
-                                                                        ) : isImageFile(url) ? (
-                                                                            <img
-                                                                                src={url}
-                                                                                alt={`Post media ${idx + 1}`}
-                                                                                className="object-cover w-full h-full rounded-md"
-                                                                                style={{ maxHeight: '320px' }}
-                                                                                loading="lazy"
-                                                                            />
-                                                                        ) : (
-                                                                            <div className="flex items-center justify-center w-full h-full bg-muted rounded-md">
-                                                                                <span className="text-muted-foreground text-sm">
-                                                                                    Unsupported media type
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                    </CardContent>
-                                                                </Card>
-                                                            </div>
-                                                        </CarouselItem>
-                                                    )
-                                                })}
-                                            </CarouselContent>
-                                            {post.media.length > 1 && (
-                                                <>
-                                                    <CarouselPrevious />
-                                                    <CarouselNext />
-                                                </>
-                                            )}
-                                        </Carousel>
-                                    </div>
-                                )}
+                                {/* Media is now rendered inline within the content above */}
+                                {/* Fallback: Show media carousel only if no inline media detected */}
+                                {Array.isArray(post.media) && post.media.length > 0 &&
+                                    !post.content?.includes('data-media-placeholder') &&
+                                    !post.content?.includes('<img') &&
+                                    !post.content?.includes('<video') && (
+                                        <div className="mt-3">
+                                            <div className="text-xs text-muted-foreground mb-2">Attached Media:</div>
+                                            <Carousel className="w-full max-w-md mx-auto">
+                                                <CarouselContent>
+                                                    {post.media.map((mediaObj, idx) => {
+                                                        const url = mediaObj.secure_url
+                                                        return (
+                                                            <CarouselItem key={idx}>
+                                                                <div className="p-1">
+                                                                    <Card className="border-0 shadow-none">
+                                                                        <CardContent className="flex aspect-square items-center justify-center p-2">
+                                                                            {isVideoFile(url) ? (
+                                                                                <video
+                                                                                    src={url}
+                                                                                    controls
+                                                                                    className="object-cover w-full h-full rounded-md"
+                                                                                    style={{ maxHeight: '320px' }}
+                                                                                    preload="metadata"
+                                                                                />
+                                                                            ) : isImageFile(url) ? (
+                                                                                <img
+                                                                                    src={url}
+                                                                                    alt={`Post media ${idx + 1}`}
+                                                                                    className="object-cover w-full h-full rounded-md"
+                                                                                    style={{ maxHeight: '320px' }}
+                                                                                    loading="lazy"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="flex items-center justify-center w-full h-full bg-muted rounded-md">
+                                                                                    <span className="text-muted-foreground text-sm">
+                                                                                        Unsupported media type
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+                                                                        </CardContent>
+                                                                    </Card>
+                                                                </div>
+                                                            </CarouselItem>
+                                                        )
+                                                    })}
+                                                </CarouselContent>
+                                                {post.media.length > 1 && (
+                                                    <>
+                                                        <CarouselPrevious />
+                                                        <CarouselNext />
+                                                    </>
+                                                )}
+                                            </Carousel>
+                                        </div>
+                                    )}
                             </>
                         )}
 
