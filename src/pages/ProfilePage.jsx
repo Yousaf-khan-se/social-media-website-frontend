@@ -214,7 +214,9 @@ export const ProfilePage = () => {
                                 <p className="text-sm text-muted-foreground">{user.email}</p>
                             </div>
 
-                            <p className="text-sm leading-relaxed">
+                            <p className="text-sm leading-relaxed"
+                                style={{ whiteSpace: "pre-wrap" }}
+                            >
                                 {user.bio || "No bio yet"}
                             </p>
 
