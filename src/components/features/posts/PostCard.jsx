@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { toggleLike, deletePost, updatePost, uploadPostMedia } from '@/store/slices/postsSlice'
@@ -12,8 +12,6 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from '@/components/ui/carousel'
-import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { CommentCard, AddCommentForm } from './CommentCard'
@@ -27,7 +25,6 @@ import {
     ChevronDown,
     ChevronUp,
     MapPin,
-    Calendar
 } from 'lucide-react'
 import {
     AlertDialog,
@@ -38,7 +35,6 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
     DropdownMenu,
@@ -52,6 +48,7 @@ import {
     isHtmlEmpty,
     generateContentSummary
 } from '@/utils/editorUtils'
+import { useUnderDevelopment } from '@/hooks/useUnderDevelopment'
 
 // Constants
 const MAX_FILES = 10
@@ -185,6 +182,7 @@ export const PostCard = ({ post }) => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const { user } = useSelector(state => state.auth)
+    const { isEditingPost, postEditSuccess } = useSelector(state => state.posts)
 
     // State management
     const [isLiking, setIsLiking] = useState(false)
@@ -197,8 +195,16 @@ export const PostCard = ({ post }) => {
     // Edit mode media handling (similar to CreatePostCard)
     const [editMediaFiles, setEditMediaFiles] = useState([])
     const [editMediaUrlToFileMap, setEditMediaUrlToFileMap] = useState(new Map())
+    const editMediaUrlToFileMapRef = useRef(new Map())
     const [isEditUploading, setIsEditUploading] = useState(false)
     const [editErrorMsg, setEditErrorMsg] = useState("")
+
+    const { showUnderDevelopmentMessage } = useUnderDevelopment();
+
+    // Keep ref in sync with state
+    useEffect(() => {
+        editMediaUrlToFileMapRef.current = editMediaUrlToFileMap
+    }, [editMediaUrlToFileMap])
 
     // Cleanup edit media URLs on unmount
     useEffect(() => {
@@ -208,6 +214,23 @@ export const PostCard = ({ post }) => {
             })
         }
     }, [editMediaUrlToFileMap])
+
+    // Handle edit success - automatically exit edit mode
+    useEffect(() => {
+        if (postEditSuccess && isEditing) {
+            // Exit edit mode and reset edit state
+            setIsEditing(false)
+            setEditContent(post.content || '')
+            setEditMediaFiles([])
+            setEditErrorMsg('')
+
+            // Clean up all blob URLs and mappings
+            editMediaUrlToFileMapRef.current.forEach((file, url) => {
+                URL.revokeObjectURL(url)
+            })
+            setEditMediaUrlToFileMap(new Map())
+        }
+    }, [postEditSuccess, isEditing, post.content])
 
     // Memoized computed values
     const authorInfo = useMemo(() => {
@@ -262,34 +285,20 @@ export const PostCard = ({ post }) => {
     }, [dispatch, post._id, post.id, isLiking])
 
     const handleDelete = useCallback(async () => {
-        try {
-            const postId = post._id || post.id
-            if (!postId) {
-                console.error('No post ID found for deletion')
-                return
-            }
+        const postId = post._id || post.id
+        if (!postId) {
+            console.error('No post ID found for deletion')
+            return
+        }
 
-            console.log('Deleting post with ID:', postId)
+        try {
             await dispatch(deletePost(postId)).unwrap()
+
             setShowDeleteConfirm(false)
 
-            // Optional: Show success toast
-            // toast({
-            //     title: "Post Deleted",
-            //     description: "Your post has been deleted successfully.",
-            //     duration: 2000,
-            // })
         } catch (error) {
             console.error('Failed to delete post:', error)
             setShowDeleteConfirm(false)
-
-            // Optional: Show error toast
-            // toast({
-            //     title: "Delete Failed",
-            //     description: "Failed to delete post. Please try again.",
-            //     variant: "destructive",
-            //     duration: 4000,
-            // })
         }
     }, [dispatch, post._id, post.id])
 
@@ -449,31 +458,39 @@ export const PostCard = ({ post }) => {
         try {
             setIsEditUploading(true)
 
-            // For editing, we need to handle the content differently
-            // The editContent contains actual media URLs (from existing media) and blob URLs (from new media)
-            // We need to convert back to the stored format with placeholders for existing media
-            // and add new placeholders for new media files
-
+            // Step 1: Identify which existing media files are still present in the edited content
+            const remainingExistingMedia = []
             let contentToSave = editContent
 
-            // First, convert existing media URLs back to placeholders
             if (Array.isArray(post.media) && post.media.length > 0) {
-                post.media.forEach((mediaObj, index) => {
+                post.media.forEach((mediaObj) => {
                     if (mediaObj && mediaObj.secure_url) {
-                        const urlRegex = new RegExp(`src="${mediaObj.secure_url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'gi')
-                        contentToSave = contentToSave.replace(urlRegex, `data-media-placeholder="${index}"`)
-                        // Also remove src attribute to avoid duplication
-                        contentToSave = contentToSave.replace(new RegExp(`<(img|video)([^>]*?)data-media-placeholder="${index}"([^>]*?)src="[^"]*"([^>]*?)>`, 'gi'),
-                            `<$1$2data-media-placeholder="${index}"$3$4>`)
+                        // Check if this media URL is still present in the edited content
+                        const urlRegex = new RegExp(`src="${mediaObj.secure_url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'i')
+                        if (urlRegex.test(editContent)) {
+                            // This media is still present, add to remaining media array
+                            remainingExistingMedia.push(mediaObj)
+
+                            // Replace URL with placeholder (using new index in remainingExistingMedia)
+                            const newIndex = remainingExistingMedia.length - 1
+                            contentToSave = contentToSave.replace(
+                                new RegExp(`src="${mediaObj.secure_url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'gi'),
+                                `data-media-placeholder="${newIndex}"`
+                            )
+                            // Remove any duplicate src attributes
+                            contentToSave = contentToSave.replace(
+                                new RegExp(`<(img|video)([^>]*?)data-media-placeholder="${newIndex}"([^>]*?)src="[^"]*"([^>]*?)>`, 'gi'),
+                                `<$1$2data-media-placeholder="${newIndex}"$3$4>`
+                            )
+                        }
+                        // If URL is not found in editContent, this media was deleted by the user
                     }
                 })
             }
 
-            // Then, if there are new media files (with blob URLs), replace them with placeholders
+            // Step 2: Handle new media files (blob URLs) - they get placeholders after existing media
             if (editMediaFiles.length > 0) {
-                // Process the content to replace blob URLs with placeholders starting after existing media count
-                const existingMediaCount = Array.isArray(post.media) ? post.media.length : 0
-                let newMediaIndex = existingMediaCount
+                let newMediaIndex = remainingExistingMedia.length
 
                 contentToSave = contentToSave.replace(
                     /<(img|video)([^>]*?)src="blob:[^"]*"([^>]*?)>/gi,
@@ -487,11 +504,14 @@ export const PostCard = ({ post }) => {
                 )
             }
 
-            // Step 1: Update the post content
+            // Step 3: Update the post content with the updated media array
+            // The backend will compare remainingExistingMedia with the original post.media
+            // and delete any media objects that are not in remainingExistingMedia
             await dispatch(updatePost({
                 id: post._id || post.id,
                 postData: {
                     content: contentToSave,
+                    media: remainingExistingMedia, // Pass the updated media array
                     isEdited: true,
                     editHistory: [
                         ...(post.editHistory || []),
@@ -502,7 +522,7 @@ export const PostCard = ({ post }) => {
 
             postUpdated = true
 
-            // Step 2: Upload new media files if any
+            // Step 4: Upload new media files if any
             if (editMediaFiles.length > 0) {
                 const formData = new FormData()
                 editMediaFiles.forEach(file => {
@@ -517,17 +537,8 @@ export const PostCard = ({ post }) => {
                 mediaUploaded = true
             }
 
-            // Reset edit state on success
-            setIsEditing(false)
-            setEditContent(post.content || '')
-            setEditMediaFiles([])
-            setEditErrorMsg('')
-
-            // Clean up all blob URLs and mappings
-            editMediaUrlToFileMap.forEach((file, url) => {
-                URL.revokeObjectURL(url)
-            })
-            setEditMediaUrlToFileMap(new Map())
+            // Edit success is now handled globally in App.jsx via useEffect
+            // Local reset will happen automatically via the postEditSuccess useEffect above
 
         } catch (error) {
             console.error('Post update/upload failed:', error)
@@ -544,7 +555,7 @@ export const PostCard = ({ post }) => {
         } finally {
             setIsEditUploading(false)
         }
-    }, [dispatch, editContent, editMediaFiles, editMediaUrlToFileMap, post._id, post.id, post.editHistory, post.content, post.media])
+    }, [dispatch, editContent, editMediaFiles, post._id, post.id, post.editHistory, post.media])
 
     // Initialize edit mode with proper content including existing media
     const initializeEditMode = useCallback(() => {
@@ -564,11 +575,11 @@ export const PostCard = ({ post }) => {
         setEditErrorMsg('')
 
         // Clean up all blob URLs and mappings
-        editMediaUrlToFileMap.forEach((file, url) => {
+        editMediaUrlToFileMapRef.current.forEach((file, url) => {
             URL.revokeObjectURL(url)
         })
         setEditMediaUrlToFileMap(new Map())
-    }, [post.content, editMediaUrlToFileMap])
+    }, [post.content])
 
     // Early return for invalid post
     if (!post) {
@@ -698,9 +709,9 @@ export const PostCard = ({ post }) => {
                                             {generateContentSummary(editContent).wordCount} words
                                             {editMediaFiles.length > 0 && `, ${editMediaFiles.length} media file${editMediaFiles.length > 1 ? 's' : ''}`}
                                         </span>
-                                        {isEditUploading && (
+                                        {(isEditUploading || isEditingPost) && (
                                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                <span>Uploading...</span>
+                                                <span>{isEditingPost ? 'Updating post...' : 'Uploading media...'}</span>
                                             </div>
                                         )}
                                     </div>
@@ -708,11 +719,11 @@ export const PostCard = ({ post }) => {
                                         <Button
                                             size="sm"
                                             onClick={handleEdit}
-                                            disabled={isEditUploading || (isHtmlEmpty(editContent) && editMediaFiles.length === 0)}
+                                            disabled={isEditUploading || isEditingPost || (isHtmlEmpty(editContent) && editMediaFiles.length === 0)}
                                         >
-                                            {isEditUploading ? 'Saving...' : 'Save'}
+                                            {isEditUploading || isEditingPost ? 'Saving...' : 'Save'}
                                         </Button>
-                                        <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={isEditUploading}>
+                                        <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={isEditUploading || isEditingPost}>
                                             Cancel
                                         </Button>
                                     </div>
@@ -819,8 +830,12 @@ export const PostCard = ({ post }) => {
                             commentsCount={engagementCounts.comments}
                             onLike={handleLike}
                             onToggleComments={() => setShowComments(!showComments)}
-                            onShare={() => {/* TODO: Implement share functionality */ }}
-                            onBookmark={() => {/* TODO: Implement bookmark functionality */ }}
+                            onShare={() => {
+                                showUnderDevelopmentMessage('Share')
+                            }}
+                            onBookmark={() => {
+                                showUnderDevelopmentMessage('BookMark')
+                            }}
                         />
 
                         {/* Comments Section */}
