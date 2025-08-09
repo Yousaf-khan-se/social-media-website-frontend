@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { createPost, uploadPostMedia } from '@/store/slices/postsSlice'
+import { createPost, uploadPostMedia, clearUploadMediaError, clearUploadMediaSuccess } from '@/store/slices/postsSlice'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
-import { CheckCircle, X, Send, Loader2 } from 'lucide-react'
+import { CheckCircle, X, Send, Loader2, AlertCircle, Ellipsis } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import {
     validateContent,
@@ -17,6 +17,8 @@ import {
 export const CreatePostCard = () => {
     const dispatch = useDispatch()
     const { user } = useSelector(state => state.auth)
+    const { uploadingMedia, uploadMediaError, uploadMediaSuccess } = useSelector(state => state.posts)
+
     const { isLoading } = useSelector(state => state.posts)
     const [content, setContent] = useState('<p></p>')
     const [isUploading, setIsUploading] = useState(false)
@@ -38,6 +40,49 @@ export const CreatePostCard = () => {
             })
         }
     }, [mediaUrlToFileMap])
+
+    // Handle media upload error
+    useEffect(() => {
+        if (uploadMediaError) {
+            const errorMessage = uploadMediaError.message || uploadMediaError.error || "Media upload failed. Please try again."
+            toast({
+                title: "Media Upload Failed",
+                description: errorMessage,
+                variant: "destructive",
+                duration: 5000,
+                icon: <AlertCircle className="h-4 w-4" />
+            })
+            // Clear the error after showing it
+            dispatch(clearUploadMediaError())
+        }
+    }, [uploadMediaError, toast, dispatch])
+
+    // Handle media upload success
+    useEffect(() => {
+        if (uploadMediaSuccess) {
+            toast({
+                title: "Media Upload Complete",
+                description: "Your media files have been uploaded successfully!",
+                duration: 3000,
+                icon: <CheckCircle className="h-4 w-4" />,
+                variant: 'success'
+            })
+
+            // Reset form completely when media upload is successful
+            setContent('<p></p>')
+            setMediaFiles([])
+            setErrorMsg('')
+
+            // Clean up all blob URLs and mappings
+            mediaUrlToFileMap.forEach((file, url) => {
+                URL.revokeObjectURL(url)
+            })
+            setMediaUrlToFileMap(new Map())
+
+            // Clear the success state after showing it
+            dispatch(clearUploadMediaSuccess())
+        }
+    }, [uploadMediaSuccess, toast, dispatch, mediaUrlToFileMap])
 
     // Handle content change from editor
     const handleContentChange = useCallback((newContent) => {
@@ -229,7 +274,7 @@ export const CreatePostCard = () => {
         e.preventDefault()
 
         // Prevent double submission
-        if (isLoading || isUploading) return
+        if (isLoading || isUploading || uploadingMedia) return
 
         // Check if content is empty and no media files
         if (isHtmlEmpty(content) && mediaFiles.length === 0) {
@@ -268,7 +313,6 @@ export const CreatePostCard = () => {
         }
 
         let postCreated = false
-        let mediaUploaded = false
 
         try {
             setIsUploading(true)
@@ -293,37 +337,32 @@ export const CreatePostCard = () => {
                     id: postId,
                     media: formData
                 })).unwrap()
-
-                mediaUploaded = true
             }
-
-            // Reset form on success
-            setContent('<p></p>')
-            setMediaFiles([])
-            setErrorMsg('')
-
-            // Clean up all blob URLs and mappings
-            mediaUrlToFileMap.forEach((file, url) => {
-                URL.revokeObjectURL(url)
-            })
-            setMediaUrlToFileMap(new Map())
 
             // Show success message
             toast({
                 title: "Post Created",
-                description: `Your post has been shared successfully!${mediaFiles.length > 0 ? ` with ${mediaFiles.length} media file${mediaFiles.length > 1 ? 's' : ''}` : ''}`,
+                description: `Your post has been shared successfully!${mediaFiles.length > 0 ? ' Media upload in progress...' : ''}`,
                 duration: 3000,
                 icon: <CheckCircle className="h-4 w-4" />,
                 variant: 'success'
             })
+
+            // Only reset form if there are no media files to upload
+            if (mediaFiles.length === 0) {
+                setContent('<p></p>')
+                setMediaFiles([])
+                setErrorMsg('')
+                setMediaUrlToFileMap(new Map())
+            }
 
         } catch (error) {
             console.error('Post creation/upload failed:', error)
 
             let errorMessage = "Failed to create post. Please try again."
 
-            if (postCreated && !mediaUploaded) {
-                errorMessage = "Post created but media upload failed. Please try uploading media separately."
+            if (postCreated && uploadMediaError && mediaFiles.length > 0) {
+                errorMessage = "Post created but media upload failed. error: " + uploadMediaError;
             } else if (!postCreated) {
                 errorMessage = "Failed to create post. Please try again."
             }
@@ -346,7 +385,7 @@ export const CreatePostCard = () => {
     // Generate content summary for display
     const contentSummary = generateContentSummary(content)
     const isContentEmpty = isHtmlEmpty(content)
-    const isFormDisabled = isLoading || isUploading
+    const isFormDisabled = isLoading || isUploading || uploadingMedia
     const hasContent = !isContentEmpty || mediaFiles.length > 0
 
     return (
@@ -362,16 +401,18 @@ export const CreatePostCard = () => {
 
                         <div className="flex-1">
                             {/* Rich Text Editor */}
-                            <TiptapEditor
-                                content={content}
-                                onChange={handleContentChange}
-                                placeholder="What's on your mind?"
-                                onImageUpload={handleImageUpload}
-                                onVideoUpload={handleVideoUpload}
-                                className="w-full"
-                                maxHeight="400px"
-                                minHeight="120px"
-                            />
+                            <div className={uploadingMedia ? "opacity-50 pointer-events-none" : ""}>
+                                <TiptapEditor
+                                    content={content}
+                                    onChange={uploadingMedia ? () => { } : handleContentChange}
+                                    placeholder={uploadingMedia ? "Uploading media..." : "What's on your mind?"}
+                                    onImageUpload={uploadingMedia ? () => Promise.reject() : handleImageUpload}
+                                    onVideoUpload={uploadingMedia ? () => Promise.reject() : handleVideoUpload}
+                                    className="w-full"
+                                    maxHeight="400px"
+                                    minHeight="120px"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -386,8 +427,12 @@ export const CreatePostCard = () => {
                     {mediaFiles.length > 0 && (
                         <div className="bg-muted/50 p-3 rounded-md">
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium">Media Files ({mediaFiles.length}/{MAX_FILES})</span>
-                                <span className="text-xs text-muted-foreground">Select and delete in editor to remove</span>
+                                <span className="text-sm font-medium">
+                                    Media Files ({mediaFiles.length}/{MAX_FILES})
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    {uploadingMedia ? "Upload in progress..." : "Select and delete in editor to remove"}
+                                </span>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {mediaFiles.map((file, index) => (
@@ -431,6 +476,12 @@ export const CreatePostCard = () => {
                             {isUploading && (
                                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                     <Loader2 className="h-4 w-4 animate-spin" />
+                                    Creating post...
+                                </div>
+                            )}
+                            {uploadingMedia && (
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
                                     Uploading media...
                                 </div>
                             )}
@@ -441,10 +492,10 @@ export const CreatePostCard = () => {
                             disabled={isFormDisabled || !hasContent}
                             className="ml-auto"
                         >
-                            {isLoading ? (
+                            {isLoading || uploadingMedia ? (
                                 <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Posting...
+                                    Please wait
+                                    <Ellipsis className="h-4 w-4 animate-pulse" />
                                 </>
                             ) : (
                                 <>

@@ -334,6 +334,19 @@ const initialState = {
     suggestedUsers: [],
     isLoadingTrending: false,
     isLoadingSuggested: false,
+
+    isDeletingPost: false,
+    postDeletionError: null,
+    postDeletionSuccess: false,
+
+    isEditingPost: false,
+    postEditError: null,
+    postEditSuccess: false,
+
+    uploadingMedia: false,
+    uploadMediaError: null,
+    uploadMediaSuccess: false,
+
     limit: 10,
     visibility: 'public', // default visibility
 }
@@ -345,8 +358,26 @@ const postsSlice = createSlice({
         clearError: (state) => {
             state.error = null
         },
+        clearPostDeletionError: (state) => {
+            state.postDeletionError = null
+        },
+        clearPostDeletionSuccess: (state) => {
+            state.postDeletionSuccess = false
+        },
+        clearPostEditError: (state) => {
+            state.postEditError = null
+        },
+        clearPostEditSuccess: (state) => {
+            state.postEditSuccess = false
+        },
         clearCurrentPost: (state) => {
             state.currentPost = null
+        },
+        clearUploadMediaError: (state) => {
+            state.uploadMediaError = null
+        },
+        clearUploadMediaSuccess: (state) => {
+            state.uploadMediaSuccess = false
         },
         resetPosts: (state) => {
             state.posts = []
@@ -484,7 +515,15 @@ const postsSlice = createSlice({
                 state.error = action.payload
             })
             // upload post media
+            .addCase(uploadPostMedia.pending, (state) => {
+                state.uploadingMedia = true
+                state.uploadMediaError = null
+                state.uploadMediaSuccess = false
+            })
             .addCase(uploadPostMedia.fulfilled, (state, action) => {
+                state.uploadingMedia = false
+                state.uploadMediaSuccess = true
+                state.uploadMediaError = null
                 const updatedPost = action.payload.post || action.payload.data
                 const index = state.posts.findIndex(post => post._id === updatedPost._id || post.id === updatedPost.id)
                 if (index !== -1) {
@@ -493,10 +532,22 @@ const postsSlice = createSlice({
                 if (state.currentPost && (state.currentPost._id === updatedPost._id || state.currentPost.id === updatedPost.id)) {
                     state.currentPost = updatedPost
                 }
-                state.error = null;
+            })
+            .addCase(uploadPostMedia.rejected, (state, action) => {
+                state.uploadingMedia = false
+                state.uploadMediaError = action.payload
+                state.uploadMediaSuccess = false
             })
             // Update post
+            .addCase(updatePost.pending, (state) => {
+                state.isEditingPost = true
+                state.postEditError = null
+                state.postEditSuccess = false
+            })
             .addCase(updatePost.fulfilled, (state, action) => {
+                state.postEditSuccess = true
+                state.postEditError = null
+                state.isEditingPost = false
                 const updatedPost = action.payload.post || action.payload.data
                 const index = state.posts.findIndex(post => post._id === updatedPost._id || post.id === updatedPost.id)
                 if (index !== -1) {
@@ -507,14 +558,31 @@ const postsSlice = createSlice({
                 }
                 state.error = null;
             })
+            .addCase(updatePost.rejected, (state, action) => {
+                state.isEditingPost = false
+                state.postEditError = action.payload
+                state.postEditSuccess = false
+            })
             // Delete post
+            .addCase(deletePost.pending, (state) => {
+                state.isDeletingPost = true
+                state.postDeletionError = null
+                state.postDeletionSuccess = false
+            })
             .addCase(deletePost.fulfilled, (state, action) => {
+                state.postDeletionSuccess = true
+                state.postDeletionError = null;
+                state.isDeletingPost = false;
                 const postId = action.payload
                 state.posts = state.posts.filter(post => post._id !== postId && post.id !== postId)
                 if (state.currentPost && (state.currentPost._id === postId || state.currentPost.id === postId)) {
                     state.currentPost = null
                 }
-                state.error = null;
+            })
+            .addCase(deletePost.rejected, (state, action) => {
+                state.isDeletingPost = false
+                state.postDeletionError = action.payload
+                state.postDeletionSuccess = false
             })
             // Toggle like (replaces like/unlike)
             .addCase(toggleLike.fulfilled, (state, action) => {
@@ -619,5 +687,5 @@ const postsSlice = createSlice({
     },
 })
 
-export const { clearError, clearCurrentPost, resetPosts } = postsSlice.actions
+export const { clearError, clearCurrentPost, resetPosts, clearPostDeletionError, clearPostDeletionSuccess, clearPostEditError, clearPostEditSuccess, clearUploadMediaError, clearUploadMediaSuccess } = postsSlice.actions
 export default postsSlice.reducer

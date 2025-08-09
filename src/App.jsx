@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, lazy } from 'react'
+import React, { useEffect, Suspense, lazy, useRef } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { ProtectedRoute } from './components/common/ProtectedRoute'
@@ -10,9 +10,11 @@ import './App.css'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchSettings } from './store/slices/settingsSlice'
 import { fetchNotifications } from './store/slices/notificationsSlice'
-import PasswordReset from './pages/ForgetPassword'
 import ForgetPassword from './pages/ForgetPassword'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import { useToast } from './hooks/use-toast'
+import { CheckCircle, Loader2, X } from 'lucide-react'
+import { clearPostDeletionError, clearPostDeletionSuccess, clearPostEditError, clearPostEditSuccess } from './store/slices/postsSlice'
 
 // Lazy load pages for code splitting
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })))
@@ -41,6 +43,12 @@ function App() {
 
   const { isAuthenticated } = useSelector(state => state.auth)
   const dispatch = useDispatch();
+  const { toast } = useToast();
+  const { isDeletingPost, postDeletionError, postDeletionSuccess, isEditingPost, postEditError, postEditSuccess } = useSelector(state => state.posts)
+
+  // Use useRef to persist the toast reference across renders
+  const deletionToastRef = useRef(null);
+  const editToastRef = useRef(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -52,6 +60,80 @@ function App() {
   useEffect(() => {
     dispatch(fetchNotifications({ page: 1, limit: 20 }))
   }, [dispatch])
+
+  useEffect(() => {
+    if (isDeletingPost) {
+      // Create the deletion toast immediately
+      deletionToastRef.current = toast({
+        title: "Post Deleting",
+        description: "Your post is being deleted...",
+        icon: <Loader2 className="h-4 w-4 animate-spin" />,
+      })
+    }
+    if (deletionToastRef.current) {
+      if (postDeletionSuccess) {
+        deletionToastRef.current.update({
+          title: "Post Deleted",
+          description: "Your post has been deleted successfully.",
+          icon: <CheckCircle className="h-4 w-4" />,
+          variant: 'success'
+        })
+
+        dispatch(clearPostDeletionSuccess())
+      }
+
+      if (postDeletionError) {
+        deletionToastRef.current.update({
+          title: "Post Deletion Failed",
+          description: "Failed to delete post. Please try again.",
+          icon: <X className="h-4 w-4" />,
+          variant: 'destructive'
+        })
+
+        dispatch(clearPostDeletionError())
+      }
+
+      setTimeout(() => {
+        deletionToastRef.current.dismiss();
+      }, 2000)
+    }
+  }, [isDeletingPost, toast, postDeletionSuccess, postDeletionError, dispatch])
+
+  useEffect(() => {
+    if (isEditingPost) {
+      // Create the edit toast immediately
+      editToastRef.current = toast({
+        title: "Post Updating",
+        description: "Your post is being updated...",
+        icon: <Loader2 className="h-4 w-4 animate-spin" />,
+      })
+    }
+    if (editToastRef.current) {
+      if (postEditSuccess) {
+        editToastRef.current.update({
+          title: "Post Updated",
+          description: "Your post has been updated successfully.",
+          icon: <CheckCircle className="h-4 w-4" />,
+          variant: 'success',
+          duration: 2000
+        })
+
+        dispatch(clearPostEditSuccess())
+      }
+
+      if (postEditError) {
+        editToastRef.current.update({
+          title: "Post Update Failed",
+          description: "Failed to update post. Please try again.",
+          icon: <X className="h-4 w-4" />,
+          variant: 'destructive',
+          duration: 2000
+        })
+
+        dispatch(clearPostEditError())
+      }
+    }
+  }, [isEditingPost, toast, postEditSuccess, postEditError, dispatch])
 
   return (
     <ErrorBoundary>

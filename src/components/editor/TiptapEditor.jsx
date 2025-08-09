@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react'
+import React, { useRef, useState, useCallback, useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 // BubbleMenu and FloatingMenu temporarily disabled for v3 compatibility
 import { StarterKit } from '@tiptap/starter-kit'
@@ -58,20 +58,6 @@ import {
     Info
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-
-// Emoji data - simplified for demo
-const EMOJI_DATA = [
-    { name: 'smile', emoji: '😊' },
-    { name: 'heart', emoji: '❤️' },
-    { name: 'thumbs_up', emoji: '👍' },
-    { name: 'fire', emoji: '🔥' },
-    { name: 'star', emoji: '⭐' },
-    { name: 'party', emoji: '🎉' },
-    { name: 'laugh', emoji: '😂' },
-    { name: 'thinking', emoji: '🤔' },
-    { name: 'cool', emoji: '😎' },
-    { name: 'rocket', emoji: '🚀' }
-]
 
 // Color palette
 const COLORS = [
@@ -196,6 +182,14 @@ const TiptapEditor = ({
             }
         }
     })
+
+    // Sync editor content when content prop changes
+    useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            // Set content without triggering onChange to prevent infinite loops
+            editor.commands.setContent(content, false)
+        }
+    }, [editor, content])
 
     // Handle image upload
     const handleImageUpload = useCallback(async (file) => {

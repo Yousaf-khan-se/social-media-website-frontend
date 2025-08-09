@@ -3,7 +3,7 @@
 import * as React from "react"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 2000000
+const TOAST_REMOVE_DELAY = 1000 * 60 * 45 // 45 minutes. This is just to be safe if user let the window open for long time and leave for it as it is.
 
 let count = 0
 
